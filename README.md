@@ -1,114 +1,39 @@
-# account-operator
-// TODO(user): Add simple overview of use/purpose
+# openMFP - account-operator
+![Build Status](https://github.com/openmfp/account-operator/actions/workflows/pipeline.yml/badge.svg)
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
 
-## Getting Started
+The openMFP account-operator manages the core Account resource which is a grouping entity in openMFP. It manages a related Namespace and will instantiate additional configured resources in its owned Namespace.
 
-### Prerequisites
-- go version v1.21.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+## Features
+- Account Namespace management
+- Instantiation of Account Resource in Namespace
+- Support for Spreading Reconciles to improve performance on operator restart
+- Validating webhook to ensure that imutable information is not changed
+- Cleanup on Account deletion including namespace cleanup
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+## Getting started
 
-```sh
-make docker-build docker-push IMG=<some-registry>/account-operator:tag
-```
+TBD
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
+## Releasing
 
-**Install the CRDs into the cluster:**
+The release is performed automatically through a GitHub Actions Workflow.
 
-```sh
-make install
-```
+All the released versions will be available through access to GitHub (as any other Golang Module).
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+## Requirements
 
-```sh
-make deploy IMG=<some-registry>/account-operator:tag
-```
-
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
-make undeploy
-```
-
-## Project Distribution
-
-Following are the steps to build the installer and distribute this project to users.
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/account-operator:tag
-```
-
-NOTE: The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without
-its dependencies.
-
-2. Using the installer
-
-Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/account-operator/<tag or branch>/dist/install.yaml
-```
+The account-operator requires a installation of go. Checkout the [go.mod](go.mod) for the required go version and dependencies.
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run `make help` for more information on all potential `make` targets
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository for instructions on how to contribute to openMFP.
 
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+## Code of Conduct
 
-## License
+Please refer to the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) file in this repository informations on the expected Code of Conduct for contributing to openMFP.
 
-Copyright 2024.
+## Licensing
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+Copyright 2024 SAP SE or an SAP affiliate company and openMFP contributors. Please see our [LICENSE](LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/openmfp/account-operator).
