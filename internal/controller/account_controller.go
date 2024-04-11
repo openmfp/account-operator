@@ -19,44 +19,39 @@ package controller
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/internal/config"
+	"github.com/openmfp/account-operator/internal/subroutines"
+	"github.com/openmfp/golang-commons/controller/lifecycle"
+)
+
+var (
+	operatorName          = "account-operator"
+	accountReconcilerName = "AccountReconciler"
 )
 
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
+	lifecycle *lifecycle.LifecycleManager
 }
 
-//+kubebuilder:rbac:groups=core.openmfp.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core.openmfp.io,resources=accounts/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=core.openmfp.io,resources=accounts/finalizers,verbs=update
+func NewAccountReconciler(ctx context.Context, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
+	subs := []lifecycle.Subroutine{}
+	if cfg.Subroutines.Namespace.Enabled {
+		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr))
+	}
+	return &AccountReconciler{
+		lifecycle: lifecycle.NewLifecycleManager(ctx, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles(),
+	}
+}
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Account object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
-	// TODO(user): your logic here
-
-	return ctrl.Result{}, nil
+	return r.lifecycle.Reconcile(ctx, req, &corev1alpha1.Account{})
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1alpha1.Account{}).
-		Complete(r)
+func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config, eventPredicates ...predicate.Predicate) error {
+	return r.lifecycle.SetupWithManager(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, r, eventPredicates...)
 }

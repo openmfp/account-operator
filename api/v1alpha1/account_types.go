@@ -20,26 +20,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type AccountRole string
+
+const (
+	AccountRoleFolder  AccountRole = "Folder"
+	AccountRoleAccount AccountRole = "Account"
+)
 
 // AccountSpec defines the desired state of Account
 type AccountSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// AccountRole specifies the intended role for this Account object.
+	// +kubebuilder:validation:Enum=Folder;Account
+	AccountRole AccountRole `json:"accountRole"`
 
-	// Foo is an example field of Account. Edit account_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Existing Namespace is the account should take ownership of
+	ExistingNamespace string `json:"existingNamespace,omitempty"`
+
+	// The display name for this account
+	// +kubebuilder:validation:MaxLength=255
+	DisplayName string `json:"displayName"`
+
+	// An optional description for this account
+	Description string `json:"description,omitempty"`
+
+	// The initial creator of this account
+	Creator string `json:"creator"`
 }
 
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Conditions         []metav1.Condition `json:"conditions,omitempty"`
+	Namespace          string             `json:"namespace,omitempty"`
+	ObservedGeneration int64              `json:"observedGeneration,omitempty" protobuf:"varint,3,opt,name=observedGeneration"`
+	NextReconcileTime  metav1.Time        `json:"nextReconcileTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".spec.displayName",name="Display Name",type=string
+// +kubebuilder:printcolumn:JSONPath=".status.Namespace",name="Account Namespace",type=string
+// +kubebuilder:printcolumn:JSONPath=".spec.accountRole",name="Account Role",type=string
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 
 // Account is the Schema for the accounts API
 type Account struct {
@@ -62,3 +83,8 @@ type AccountList struct {
 func init() {
 	SchemeBuilder.Register(&Account{}, &AccountList{})
 }
+
+func (i *Account) GetObservedGeneration() int64          { return i.Status.ObservedGeneration }
+func (i *Account) SetObservedGeneration(g int64)         { i.Status.ObservedGeneration = g }
+func (i *Account) GetNextReconcileTime() metav1.Time     { return i.Status.NextReconcileTime }
+func (i *Account) SetNextReconcileTime(time metav1.Time) { i.Status.NextReconcileTime = time }
