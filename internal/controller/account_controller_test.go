@@ -2,11 +2,14 @@ package controller
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
+	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -20,6 +23,12 @@ import (
 	"github.com/openmfp/account-operator/internal/subroutines"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
+)
+
+const (
+	defaultTestTimeout  = 190 * time.Second
+	defaultTickInterval = 250 * time.Millisecond
+	defaultNamespace    = "default"
 )
 
 type AccountTestSuite struct {
@@ -38,6 +47,8 @@ func (suite *AccountTestSuite) SetupSuite() {
 	logConfig.Name = "AccountTestSuite"
 	log, err := logger.New(logConfig)
 	suite.Nil(err)
+	// Disable color logging as vs-code does not support color logging in the test output
+	log = logger.NewFromZerolog(log.Output(&zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}))
 
 	cfg, err := config.NewFromEnv()
 	suite.Nil(err)
@@ -55,6 +66,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Nil(err)
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(v1.AddToScheme(scheme.Scheme))
 
 	// +kubebuilder:scaffold:scheme
 
@@ -62,14 +74,14 @@ func (suite *AccountTestSuite) SetupSuite() {
 		Scheme: scheme.Scheme,
 	})
 	suite.Nil(err)
-
+	ctrl.SetLogger(log.Logr())
 	suite.kubernetesManager, err = ctrl.NewManager(k8scfg, ctrl.Options{
 		Scheme:      scheme.Scheme,
 		BaseContext: func() context.Context { return testContext },
 	})
 	suite.Nil(err)
 
-	accountReconciler := NewAccountReconciler(testContext, suite.kubernetesManager, cfg)
+	accountReconciler := NewAccountReconciler(log, suite.kubernetesManager, cfg)
 	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg)
 	suite.Nil(err)
 
@@ -89,38 +101,123 @@ func (suite *AccountTestSuite) startController() {
 	suite.Nil(err)
 }
 
-func (suite *AccountTestSuite) TestAccountReconciler() {
+func (suite *AccountTestSuite) TestAddingFinalizer() {
+	// Given
 	testContext := context.Background()
-	accountName := "test-account"
-	accountNamespace := "default"
+	accountName := "test-account-finalizer"
+
 	account := &corev1alpha1.Account{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      accountName,
-			Namespace: accountNamespace,
+			Namespace: defaultNamespace,
 		},
 		Spec: corev1alpha1.AccountSpec{
 			AccountRole: corev1alpha1.AccountRoleFolder,
 		}}
 
+	// When
 	err := suite.kubernetesClient.Create(testContext, account)
 	suite.Nil(err)
 
+	// Then
 	createdAccount := corev1alpha1.Account{}
-
 	suite.Assert().Eventually(func() bool {
 		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
 			Name:      accountName,
-			Namespace: accountNamespace,
+			Namespace: defaultNamespace,
 		}, &createdAccount)
-		return err == nil
-	}, time.Second*30, time.Millisecond*250)
-
-	suite.Assert().Eventually(func() bool {
-		err := suite.kubernetesClient.Update(testContext, &createdAccount)
-		return err == nil
-	}, time.Second*30, time.Millisecond*250)
+		return err == nil && createdAccount.Finalizers != nil
+	}, defaultTestTimeout, defaultTickInterval)
 
 	suite.Equal(createdAccount.ObjectMeta.Finalizers, []string{subroutines.NamespaceSubroutineFinalizer})
+}
+
+func (suite *AccountTestSuite) TestNamespaceCreation() {
+	// Given
+	testContext := context.Background()
+	accountName := "test-account-ns-creation"
+	account := &corev1alpha1.Account{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      accountName,
+			Namespace: defaultNamespace,
+		},
+		Spec: corev1alpha1.AccountSpec{
+			AccountRole: corev1alpha1.AccountRoleFolder,
+		}}
+
+	// When
+	err := suite.kubernetesClient.Create(testContext, account)
+	suite.Nil(err)
+
+	// Then
+	createdAccount := corev1alpha1.Account{}
+	suite.Assert().Eventually(func() bool {
+		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
+			Name:      accountName,
+			Namespace: defaultNamespace,
+		}, &createdAccount)
+		return err == nil && createdAccount.Status.Namespace != nil
+	}, defaultTestTimeout, defaultTickInterval)
+
+	// Test if Namespace exists
+	suite.verifyNamespace(testContext, accountName, defaultNamespace, createdAccount.Status.Namespace)
+}
+
+func (suite *AccountTestSuite) TestNamespaceUsingExisitingNamespace() {
+	// Given
+	testContext := context.Background()
+	accountName := "test-account-existing-namespace"
+	existingNamespaceName := "existing-namespace"
+	account := &corev1alpha1.Account{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      accountName,
+			Namespace: defaultNamespace,
+		},
+		Spec: corev1alpha1.AccountSpec{
+			AccountRole:       corev1alpha1.AccountRoleFolder,
+			ExistingNamespace: &existingNamespaceName,
+		}}
+
+	nsToCreate := &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: existingNamespaceName}}
+	err := suite.kubernetesClient.Create(testContext, nsToCreate)
+	suite.Nil(err)
+
+	// When
+	err = suite.kubernetesClient.Create(testContext, account)
+	suite.Nil(err)
+
+	// Then
+	createdAccount := corev1alpha1.Account{}
+	suite.Assert().Eventually(func() bool {
+		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
+			Name:      accountName,
+			Namespace: defaultNamespace,
+		}, &createdAccount)
+		return err == nil && createdAccount.Status.Namespace != nil
+	}, time.Second*30, time.Millisecond*250)
+
+	suite.Assert().Equal(existingNamespaceName, *createdAccount.Status.Namespace)
+	// Test if Namespace exists
+	suite.verifyNamespace(testContext, accountName, defaultNamespace, createdAccount.Status.Namespace)
+}
+
+func (suite *AccountTestSuite) verifyNamespace(
+	ctx context.Context, accName string, accNamespace string, nsName *string) {
+
+	suite.Require().NotNil(nsName, "failed to verify namespace name")
+	ns := &v1.Namespace{}
+	err := suite.kubernetesClient.Get(ctx, types.NamespacedName{Name: *nsName}, ns)
+	suite.Nil(err)
+
+	suite.Assert().Contains(ns.GetLabels(), subroutines.NamespaceAccountOwnerLabel,
+		"failed to verify account label on namespace")
+	suite.Assert().Contains(ns.GetLabels(), subroutines.NamespaceAccountOwnerNamespaceLabel,
+		"failed to verify account namespace label on namespace")
+
+	suite.Assert().Equal(ns.GetLabels()[subroutines.NamespaceAccountOwnerLabel], accName,
+		"failed to verify account label on namespace")
+	suite.Assert().Contains(ns.GetLabels()[subroutines.NamespaceAccountOwnerNamespaceLabel], accNamespace,
+		"failed to verify account namespace label on namespace")
 }
 
 func TestAccountTestSuite(t *testing.T) {

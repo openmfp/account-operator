@@ -26,6 +26,7 @@ import (
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/subroutines"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
+	"github.com/openmfp/golang-commons/logger"
 )
 
 var (
@@ -38,13 +39,13 @@ type AccountReconciler struct {
 	lifecycle *lifecycle.LifecycleManager
 }
 
-func NewAccountReconciler(ctx context.Context, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
+func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
 	subs := []lifecycle.Subroutine{}
 	if cfg.Subroutines.Namespace.Enabled {
-		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr))
+		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
 	}
 	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(ctx, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles(),
+		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles(),
 	}
 }
 

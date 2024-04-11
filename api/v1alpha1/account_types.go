@@ -34,7 +34,7 @@ type AccountSpec struct {
 	AccountRole AccountRole `json:"accountRole"`
 
 	// Existing Namespace is the account should take ownership of
-	ExistingNamespace string `json:"existingNamespace,omitempty"`
+	ExistingNamespace *string `json:"existingNamespace,omitempty"`
 
 	// The display name for this account
 	// +kubebuilder:validation:MaxLength=255
@@ -50,7 +50,7 @@ type AccountSpec struct {
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
 	Conditions         []metav1.Condition `json:"conditions,omitempty"`
-	Namespace          string             `json:"namespace,omitempty"`
+	Namespace          *string            `json:"namespace,omitempty"`
 	ObservedGeneration int64              `json:"observedGeneration,omitempty" protobuf:"varint,3,opt,name=observedGeneration"`
 	NextReconcileTime  metav1.Time        `json:"nextReconcileTime,omitempty"`
 }

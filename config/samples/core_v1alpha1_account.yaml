@@ -1,7 +1,7 @@
 apiVersion: core.openmfp.io/v1alpha1
 kind: Account
 metadata:
-  name: new-account-debug
+  name: new-account-debug1
   namespace: default
 spec:
   accountRole: Folder
