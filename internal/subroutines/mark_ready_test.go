@@ -56,3 +56,33 @@ func (s *MarkReadySubroutineSuite) TestProcess_OK() {
 	s.Equal(corev1alpha1.ConditionAccountReady, instance.Status.Conditions[0].Reason)
 	s.Equal("The account is ready", instance.Status.Conditions[0].Message)
 }
+
+// Test Process and verify that the Ready condition is updataed in case it is already existing
+func (s *MarkReadySubroutineSuite) TestProcess_ExistingReadyCondition() {
+	// Given
+	instance := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+		Status: corev1alpha1.AccountStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   corev1alpha1.ConditionAccountReady,
+					Status: metav1.ConditionFalse,
+				},
+			},
+		},
+	}
+	s.clientMock.On("Update", mock.Anything, instance).Return(nil)
+
+	// When
+	result, err := s.testObj.Process(context.Background(), instance)
+
+	// Then
+	s.Nil(err)
+	s.Equal(result, ctrl.Result{})
+
+	s.Len(instance.Status.Conditions, 1)
+	s.Equal(metav1.ConditionTrue, instance.Status.Conditions[0].Status)
+	s.Equal(corev1alpha1.ConditionAccountReady, instance.Status.Conditions[0].Type)
+	s.Equal(corev1alpha1.ConditionAccountReady, instance.Status.Conditions[0].Reason)
+	s.Equal("The account is ready", instance.Status.Conditions[0].Message)
+}
