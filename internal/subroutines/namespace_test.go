@@ -73,6 +73,24 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_O
 	suite.Nil(err)
 }
 
+// Test processing with NoFinalizer and account creation fails unexpectedly
+func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_CreateError() {
+	// Given
+	testAccount := &corev1alpha1.Account{}
+	suite.clientMock.EXPECT().
+		Create(mock.Anything, mock.Anything).
+		Return(errors.NewBadRequest(""))
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Nil(testAccount.Status.Namespace)
+	suite.NotNil(err)
+	suite.True(err.Retry())
+	suite.True(err.Sentry())
+}
+
 func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus() {
 	// Given
 	testAccount := &corev1alpha1.Account{
@@ -115,6 +133,31 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 	suite.Equal(defaultExpectedTestNamespace, *testAccount.Status.Namespace)
 
 	suite.Nil(err)
+}
+
+// Test like TestProcessingWithNamespaceInStatusMissingLabels but the update call fails unexpectedly
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMissingLabels_UpdateError() {
+	// Given
+	testAccount := &corev1alpha1.Account{
+		Status: corev1alpha1.AccountStatus{
+			Namespace: ptr.To(defaultExpectedTestNamespace),
+		},
+	}
+	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
+		NamespaceAccountOwnerLabel: testAccount.Name,
+	})
+	suite.clientMock.EXPECT().
+		Update(mock.Anything, mock.Anything).
+		Return(errors.NewBadRequest(""))
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Nil(testAccount.Status.Namespace)
+	suite.NotNil(err)
+	suite.True(err.Retry())
+	suite.True(err.Sentry())
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMissingLabels2() {
