@@ -50,8 +50,7 @@ func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	if instance.Status.Namespace != nil {
 		createdNamespace = generateNamespace(instance)
 		_, err := controllerutil.CreateOrUpdate(ctx, r.client, createdNamespace, func() error {
-			setNamespaceLabels(createdNamespace, instance)
-			return nil
+			return setNamespaceLabels(createdNamespace, instance)
 		})
 		if err != nil {
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
