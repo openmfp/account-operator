@@ -3,6 +3,7 @@ package subroutines
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -38,6 +39,13 @@ func (r *MarkReadySubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	if instance.Status.Conditions == nil {
 		instance.Status.Conditions = []metav1.Condition{}
 	}
-	setStatusCondition(&instance.Status.Conditions, metav1.ConditionTrue, corev1alpha1.ConditionAccountReady, corev1alpha1.ConditionAccountReady, "The account is ready")
+
+	meta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
+		Type:    corev1alpha1.ConditionAccountReady,
+		Status:  metav1.ConditionTrue,
+		Message: "The account is ready",
+		Reason:  corev1alpha1.ConditionAccountReady,
+	})
+
 	return ctrl.Result{}, nil
 }
