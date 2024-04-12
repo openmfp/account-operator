@@ -40,8 +40,7 @@ func (suite *NamespaceSubroutineTestSuite) SetupTest() {
 func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_OK() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
-
-	expectNewNamespaceCreateCall(suite, defaultExpectedTestNamespace)
+	mockNewNamespaceCreateCall(suite, defaultExpectedTestNamespace)
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -60,8 +59,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus()
 			Namespace: ptr.To(defaultExpectedTestNamespace),
 		},
 	}
-
-	expectGetNamespaceCallReturningNamespaceWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
+	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
 		NamespaceAccountOwnerLabel:          testAccount.Name,
 		NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
 	})
@@ -83,11 +81,10 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 			Namespace: ptr.To(defaultExpectedTestNamespace),
 		},
 	}
-
-	expectGetNamespaceCallReturningNamespaceWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
+	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
 		NamespaceAccountOwnerLabel: testAccount.Name,
 	})
-	expectNewNamespaceUpdateCall(suite)
+	mockNewNamespaceUpdateCall(suite)
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -106,9 +103,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 			Namespace: ptr.To(defaultExpectedTestNamespace),
 		},
 	}
-
-	expectGetNamespaceCallReturningNamespaceWithLabels(suite, defaultExpectedTestNamespace, nil)
-	expectNewNamespaceUpdateCall(suite)
+	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, nil)
+	mockNewNamespaceUpdateCall(suite)
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -127,9 +123,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusAn
 			Namespace: ptr.To(defaultExpectedTestNamespace),
 		},
 	}
-
-	expectGetNamespaceCallNotFound(suite)
-	expectNewNamespaceCreateCall(suite, defaultExpectedTestNamespace)
+	mockGetNamespaceCallNotFound(suite)
+	mockNewNamespaceCreateCall(suite, defaultExpectedTestNamespace)
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -141,11 +136,50 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusAn
 	suite.Nil(err)
 }
 
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespace_OK() {
+	// Given
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		Spec: corev1alpha1.AccountSpec{
+			ExistingNamespace: &namespaceName,
+		},
+	}
+	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
+		NamespaceAccountOwnerLabel:          testAccount.Name,
+		NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
+	})
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Require().NotNil(testAccount.Status.Namespace)
+	suite.Equal(namespaceName, *testAccount.Status.Namespace)
+
+	suite.Nil(err)
+
+}
+
+// Test finalize function and expect no error
+func (suite *NamespaceSubroutineTestSuite) TestFinalizeNamespace_OK() {
+	// Given
+	testAccount := &corev1alpha1.Account{}
+
+	// When
+	res, err := suite.testObj.Finalize(context.Background(), testAccount)
+
+	// Then
+	suite.False(res.Requeue)
+	suite.Assert().Zero(res.RequeueAfter)
+	suite.Nil(err)
+}
+
 func TestNamespaceSubroutineTestSuite(t *testing.T) {
 	suite.Run(t, new(NamespaceSubroutineTestSuite))
 }
 
-func expectNewNamespaceCreateCall(suite *NamespaceSubroutineTestSuite, generatedName string) *mocks.Client_Create_Call {
+//nolint:golint,unparam
+func mockNewNamespaceCreateCall(suite *NamespaceSubroutineTestSuite, generatedName string) *mocks.Client_Create_Call {
 	return suite.clientMock.EXPECT().
 		Create(mock.Anything, mock.Anything).
 		Run(func(ctx context.Context, obj client.Object, opts ...client.CreateOption) {
@@ -155,14 +189,15 @@ func expectNewNamespaceCreateCall(suite *NamespaceSubroutineTestSuite, generated
 		Return(nil)
 }
 
-func expectNewNamespaceUpdateCall(suite *NamespaceSubroutineTestSuite) *mocks.Client_Update_Call {
+//nolint:golint,unparam
+func mockNewNamespaceUpdateCall(suite *NamespaceSubroutineTestSuite) *mocks.Client_Update_Call {
 	return suite.clientMock.EXPECT().
 		Update(mock.Anything, mock.Anything).
 		Return(nil)
 }
 
-func expectGetNamespaceCallReturningNamespaceWithLabels(
-	suite *NamespaceSubroutineTestSuite, name string, labels map[string]string) *mocks.Client_Get_Call {
+//nolint:golint,unparam
+func mockGetNamespaceCallWithLabels(suite *NamespaceSubroutineTestSuite, name string, labels map[string]string) *mocks.Client_Get_Call {
 	return suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).
 		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
@@ -173,7 +208,7 @@ func expectGetNamespaceCallReturningNamespaceWithLabels(
 		Return(nil)
 }
 
-func expectGetNamespaceCallNotFound(
+func mockGetNamespaceCallNotFound(
 	suite *NamespaceSubroutineTestSuite) *mocks.Client_Get_Call {
 	return suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).

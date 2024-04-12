@@ -11,8 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/internal/config"
-	openmfpconfig "github.com/openmfp/golang-commons/config"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
 	"github.com/openmfp/golang-commons/logger"
@@ -33,19 +31,15 @@ func NewNamespaceSubroutine(client client.Client) *NamespaceSubroutine {
 	return &NamespaceSubroutine{client: client}
 }
 
-func (r *NamespaceSubroutine) GetName() string {
+func (r *NamespaceSubroutine) GetName() string { // coverage-ignore
 	return NamespaceSubroutineFinalizer
 }
 
 func (r *NamespaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	log := logger.LoadLoggerFromContext(ctx)
-	cfg := openmfpconfig.LoadConfigFromContext(ctx).(config.Config)
-	instance := runtimeObj.(*corev1alpha1.Account)
-	log.Info().Bool("enabled", cfg.Subroutines.Namespace.Enabled).Str("name", instance.GetName()).Msg("Finalizing NamespaceSubroutine")
 	return ctrl.Result{}, nil
 }
 
-func (r *NamespaceSubroutine) Finalizers() []string {
+func (r *NamespaceSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.io/finalizer"}
 }
 
