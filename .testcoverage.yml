@@ -1,6 +1,7 @@
 exclude:
   paths:
     - ^internal/subroutines/mocks # exclude generated mock files
-    - zz_generated\.deepcopy\.go$ # generated files by kube builder
+    - api/v1alpha1 # skipping generated files and crd type definitions
     - main\.go$ # skip covering main.go
+    
  

@@ -37,6 +37,27 @@ func (suite *NamespaceSubroutineTestSuite) SetupTest() {
 	suite.testObj = NewNamespaceSubroutine(suite.clientMock)
 }
 
+func (suite *NamespaceSubroutineTestSuite) TestGetName_OK() {
+	// When
+	result := suite.testObj.GetName()
+
+	// Then
+	suite.Equal(NamespaceSubroutineName, result)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalize_OK() {
+	// Given
+	testAccount := &corev1alpha1.Account{}
+
+	// When
+	res, err := suite.testObj.Finalize(context.Background(), testAccount)
+
+	// Then
+	suite.False(res.Requeue)
+	suite.Assert().Zero(res.RequeueAfter)
+	suite.Nil(err)
+}
+
 func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_OK() {
 	// Given
 	testAccount := &corev1alpha1.Account{}

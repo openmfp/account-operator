@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	NamespaceSubroutineName             = "NamespaceSubroutine"
 	NamespaceSubroutineFinalizer        = "account.core.openmfp.io/finalizer"
 	NamespaceAccountOwnerLabel          = "account.core.openmfp.io/owner"
 	NamespaceAccountOwnerNamespaceLabel = "account.core.openmfp.io/owner-namespace"
@@ -31,8 +32,8 @@ func NewNamespaceSubroutine(client client.Client) *NamespaceSubroutine {
 	return &NamespaceSubroutine{client: client}
 }
 
-func (r *NamespaceSubroutine) GetName() string { // coverage-ignore
-	return NamespaceSubroutineFinalizer
+func (r *NamespaceSubroutine) GetName() string {
+	return NamespaceSubroutineName
 }
 
 func (r *NamespaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
