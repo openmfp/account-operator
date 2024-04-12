@@ -1,0 +1,9 @@
+apiVersion: core.openmfp.io/v1alpha1
+kind: Account
+metadata:
+  name: new-account-debug1
+  namespace: default
+spec:
+  accountRole: folder
+  displayName: New Demo Account
+  creator: bastian.echterhoelter@sap.com

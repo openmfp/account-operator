@@ -1,5 +1,6 @@
-[!WARNING]
-This Repository is under construction and not yet ready for public consumption. Please check back later for updates.
+> [!WARNING]
+> This Repository is under construction and not yet ready for public consumption. Please check back later for updates.
+
 
 
 # openMFP - account-operator
