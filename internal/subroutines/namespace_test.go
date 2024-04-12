@@ -73,7 +73,6 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_O
 	suite.Nil(err)
 }
 
-// Test processing with NoFinalizer and account creation fails unexpectedly
 func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_CreateError() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
@@ -111,6 +110,26 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus()
 	suite.Equal(defaultExpectedTestNamespace, *testAccount.Status.Namespace)
 
 	suite.Nil(err)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus_LookupError() {
+	// Given
+	testAccount := &corev1alpha1.Account{
+		Status: corev1alpha1.AccountStatus{
+			Namespace: ptr.To(defaultExpectedTestNamespace),
+		},
+	}
+	suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		Return(errors.NewBadRequest(""))
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.NotNil(err)
+	suite.True(err.Retry())
+	suite.True(err.Sentry())
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMissingLabels() {
