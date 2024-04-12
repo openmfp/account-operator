@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: account-operator
+Upstream-Contact: 
+Source: https://github.com/openmfp/account-operator
+
+Files: *
+Copyright: 2024 SAP SE or an SAP affiliate company and openMFP contributors and account-operator contributors.
+License: Apache-2.0
+
