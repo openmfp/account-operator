@@ -1,0 +1,4 @@
+exclude:
+  paths:
+    - ^internal/subroutines/mocks     # exclude package `pkg/bar`
+ 
