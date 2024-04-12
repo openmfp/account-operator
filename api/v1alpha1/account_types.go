@@ -30,7 +30,7 @@ const (
 // AccountSpec defines the desired state of Account
 type AccountSpec struct {
 	// Type specifies the intended type for this Account object.
-	// +kubebuilder:validation:Enum=Folder;Account
+	// +kubebuilder:validation:Enum=folder;account
 	Type AccountType `json:"type"`
 
 	// Namespace is the account should take ownership of

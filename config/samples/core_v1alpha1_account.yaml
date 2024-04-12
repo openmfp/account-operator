@@ -4,6 +4,6 @@ metadata:
   name: new-account-debug1
   namespace: default
 spec:
-  accountRole: Folder
+  accountRole: folder
   displayName: New Demo Account
   creator: bastian.echterhoelter@sap.com

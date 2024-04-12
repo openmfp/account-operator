@@ -68,8 +68,8 @@ spec:
               type:
                 description: Type specifies the intended type for this Account object.
                 enum:
-                - Folder
-                - Account
+                - folder
+                - account
                 type: string
             required:
             - creator
