@@ -6,9 +6,12 @@ jobs:
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
-    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@main
+    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@ci/allow-to-overwrite-coverage-defaults
     secrets: inherit
     with:
       imageTagName: ghcr.io/openmfp/account-operator
       useMake: true
       useLocalCoverageConfig: true
+      coverageThreasholdFile: 95
+      coverageThreasholdPackage: 95
+      coverageThreasholdTotal: 95
