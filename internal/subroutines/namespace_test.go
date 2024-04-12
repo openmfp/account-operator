@@ -181,6 +181,27 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespace_O
 
 }
 
+// Test processing with an account specifying an existing namespace that does not exist
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespaceNotFound() {
+	// Given
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		Spec: corev1alpha1.AccountSpec{
+			ExistingNamespace: &namespaceName,
+		},
+	}
+	mockGetNamespaceCallNotFound(suite)
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Nil(testAccount.Status.Namespace)
+	suite.NotNil(err)
+	suite.False(err.Retry())
+	suite.False(err.Sentry())
+}
+
 // Test finalize function and expect no error
 func (suite *NamespaceSubroutineTestSuite) TestFinalizeNamespace_OK() {
 	// Given
