@@ -23,8 +23,9 @@ import (
 type AccountType string
 
 const (
-	AccountTypeFolder  AccountType = "folder"
-	AccountTypeAccount AccountType = "account"
+	AccountTypeFolder     AccountType = "folder"
+	AccountTypeAccount    AccountType = "account"
+	ConditionAccountReady string      = "Ready"
 )
 
 // AccountSpec defines the desired state of Account

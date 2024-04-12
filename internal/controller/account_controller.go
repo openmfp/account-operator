@@ -44,6 +44,9 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	if cfg.Subroutines.Namespace.Enabled {
 		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
 	}
+	if cfg.Subroutines.MarkReady.Enabled {
+		subs = append(subs, subroutines.NewMarkReadySubroutine())
+	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles(),
 	}
