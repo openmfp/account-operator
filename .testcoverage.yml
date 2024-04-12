@@ -1,6 +1,6 @@
 exclude:
   paths:
-    - ^internal/subroutines/mocks     # exclude package `pkg/bar`
-    - deepcopy\.go$
-    - main\.go$
+    - ^internal/subroutines/mocks # exclude generated mock files
+    - zz_generated\.deepcopy\.go$ # generated files by kube builder
+    - main\.go$ # skip covering main.go
  
