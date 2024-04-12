@@ -154,7 +154,6 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 	_, err := suite.testObj.Process(context.Background(), testAccount)
 
 	// Then
-	suite.Nil(testAccount.Status.Namespace)
 	suite.NotNil(err)
 	suite.True(err.Retry())
 	suite.True(err.Sentry())
@@ -243,6 +242,29 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespaceNo
 	suite.NotNil(err)
 	suite.False(err.Retry())
 	suite.False(err.Sentry())
+}
+
+// Test like TestProcessingWithExistingNamespaceNotFound but namespace lookup fails unexpectedly
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespaceLookupError() {
+	// Given
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		Spec: corev1alpha1.AccountSpec{
+			ExistingNamespace: &namespaceName,
+		},
+	}
+	suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		Return(errors.NewBadRequest(""))
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Nil(testAccount.Status.Namespace)
+	suite.NotNil(err)
+	suite.True(err.Retry())
+	suite.True(err.Sentry())
 }
 
 // Test finalize function and expect no error
