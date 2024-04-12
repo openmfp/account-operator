@@ -218,12 +218,12 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusAn
 	suite.Nil(err)
 }
 
-func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespace_OK() {
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespace_OK() {
 	// Given
 	namespaceName := "a-names-space"
 	testAccount := &corev1alpha1.Account{
 		Spec: corev1alpha1.AccountSpec{
-			ExistingNamespace: &namespaceName,
+			Namespace: &namespaceName,
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
@@ -242,34 +242,32 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespace_O
 
 }
 
-// Test processing with an account specifying an existing namespace that does not exist
-func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespaceNotFound() {
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceNotFound() {
 	// Given
 	namespaceName := "a-names-space"
 	testAccount := &corev1alpha1.Account{
 		Spec: corev1alpha1.AccountSpec{
-			ExistingNamespace: &namespaceName,
+			Namespace: &namespaceName,
 		},
 	}
 	mockGetNamespaceCallNotFound(suite)
+
+	mockNewNamespaceCreateCall(suite, namespaceName)
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
 
 	// Then
-	suite.Nil(testAccount.Status.Namespace)
-	suite.NotNil(err)
-	suite.False(err.Retry())
-	suite.False(err.Sentry())
+	suite.Equal(namespaceName, *testAccount.Status.Namespace)
+	suite.Nil(err)
 }
 
-// Test like TestProcessingWithExistingNamespaceNotFound but namespace lookup fails unexpectedly
-func (suite *NamespaceSubroutineTestSuite) TestProcessingWithExistingNamespaceLookupError() {
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceLookupError() {
 	// Given
 	namespaceName := "a-names-space"
 	testAccount := &corev1alpha1.Account{
 		Spec: corev1alpha1.AccountSpec{
-			ExistingNamespace: &namespaceName,
+			Namespace: &namespaceName,
 		},
 	}
 	suite.clientMock.EXPECT().

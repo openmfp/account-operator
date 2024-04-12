@@ -20,28 +20,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type AccountRole string
+type AccountType string
 
 const (
-	AccountRoleFolder  AccountRole = "Folder"
-	AccountRoleAccount AccountRole = "Account"
+	AccountTypeFolder  AccountType = "folder"
+	AccountTypeAccount AccountType = "account"
 )
 
 // AccountSpec defines the desired state of Account
 type AccountSpec struct {
-	// AccountRole specifies the intended role for this Account object.
+	// Type specifies the intended type for this Account object.
 	// +kubebuilder:validation:Enum=Folder;Account
-	AccountRole AccountRole `json:"accountRole"`
+	Type AccountType `json:"type"`
 
-	// Existing Namespace is the account should take ownership of
-	ExistingNamespace *string `json:"existingNamespace,omitempty"`
+	// Namespace is the account should take ownership of
+	Namespace *string `json:"namespace,omitempty"`
 
 	// The display name for this account
 	// +kubebuilder:validation:MaxLength=255
 	DisplayName string `json:"displayName"`
 
 	// An optional description for this account
-	Description string `json:"description,omitempty"`
+	Description *string `json:"description,omitempty"`
 
 	// The initial creator of this account
 	Creator string `json:"creator"`

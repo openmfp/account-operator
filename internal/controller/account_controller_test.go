@@ -112,7 +112,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 			Namespace: defaultNamespace,
 		},
 		Spec: corev1alpha1.AccountSpec{
-			AccountRole: corev1alpha1.AccountRoleFolder,
+			Type: corev1alpha1.AccountTypeFolder,
 		}}
 
 	// When
@@ -142,7 +142,7 @@ func (suite *AccountTestSuite) TestNamespaceCreation() {
 			Namespace: defaultNamespace,
 		},
 		Spec: corev1alpha1.AccountSpec{
-			AccountRole: corev1alpha1.AccountRoleFolder,
+			Type: corev1alpha1.AccountTypeFolder,
 		}}
 
 	// When
@@ -174,8 +174,8 @@ func (suite *AccountTestSuite) TestNamespaceUsingExisitingNamespace() {
 			Namespace: defaultNamespace,
 		},
 		Spec: corev1alpha1.AccountSpec{
-			AccountRole:       corev1alpha1.AccountRoleFolder,
-			ExistingNamespace: &existingNamespaceName,
+			Type:      corev1alpha1.AccountTypeFolder,
+			Namespace: &existingNamespaceName,
 		}}
 
 	nsToCreate := &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: existingNamespaceName}}

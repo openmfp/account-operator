@@ -52,13 +52,6 @@ spec:
           spec:
             description: AccountSpec defines the desired state of Account
             properties:
-              accountRole:
-                description: AccountRole specifies the intended role for this Account
-                  object.
-                enum:
-                - Folder
-                - Account
-                type: string
               creator:
                 description: The initial creator of this account
                 type: string
@@ -69,14 +62,19 @@ spec:
                 description: The display name for this account
                 maxLength: 255
                 type: string
-              existingNamespace:
-                description: Existing Namespace is the account should take ownership
-                  of
+              namespace:
+                description: Namespace is the account should take ownership of
+                type: string
+              type:
+                description: Type specifies the intended type for this Account object.
+                enum:
+                - Folder
+                - Account
                 type: string
             required:
-            - accountRole
             - creator
             - displayName
+            - type
             type: object
           status:
             description: AccountStatus defines the observed state of Account
