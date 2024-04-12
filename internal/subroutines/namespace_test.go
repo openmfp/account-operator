@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -296,6 +297,28 @@ func (suite *NamespaceSubroutineTestSuite) TestFinalizeNamespace_OK() {
 	suite.False(res.Requeue)
 	suite.Assert().Zero(res.RequeueAfter)
 	suite.Nil(err)
+}
+
+// Test an account with a namspace in the spec, where the already existing namespace has different owner labels
+func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceMismatchedOwnerLabels() {
+	// Given
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Spec: corev1alpha1.AccountSpec{
+			Namespace: &namespaceName,
+		},
+	}
+	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
+		NamespaceAccountOwnerLabel: "different-owner",
+	})
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Require().Nil(testAccount.Status.Namespace)
+	suite.NotNil(err)
 }
 
 func TestNamespaceSubroutineTestSuite(t *testing.T) {
