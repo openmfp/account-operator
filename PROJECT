@@ -4,7 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: openmfp.io
 layout:
-- go.kubebuilder.io/v4
+- go.kubebuilder.io/v3
 projectName: account-operator
 repo: github.com/openmfp/account-operator
 resources:
