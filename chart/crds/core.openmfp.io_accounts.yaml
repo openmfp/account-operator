@@ -80,6 +80,10 @@ spec:
                         In CamelCase.
                         More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                       type: string
+                    specGoTemplate:
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - specGoTemplate
                   type: object
                 type: array
               namespace:

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,6 +29,8 @@ func TestFinalizers(t *testing.T) {
 }
 
 func TestExtensionSubroutine_Process(t *testing.T) {
+	namespace := "namespace"
+
 	tests := []struct {
 		name     string
 		account  v1alpha1.Account
@@ -47,9 +50,12 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
-							SpecGoTemplate: map[string]any{},
+							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
 				},
 			},
 			k8sMocks: func(c *mocks.Client) {
@@ -73,9 +79,12 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
-							SpecGoTemplate: map[string]any{},
+							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
 				},
 			},
 			k8sMocks: func(c *mocks.Client) {
@@ -108,7 +117,7 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 										Kind:       "AccountExtension",
 										APIVersion: "core.openmfp.io/v1alpha1",
 									},
-									SpecGoTemplate: map[string]any{},
+									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
 							},
 						},
@@ -142,6 +151,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 }
 
 func TestExtensionSubroutine_Finalize(t *testing.T) {
+	namespace := "namespace"
+
 	tests := []struct {
 		name     string
 		account  v1alpha1.Account
@@ -161,9 +172,12 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
-							SpecGoTemplate: map[string]any{},
+							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
 				},
 			},
 			k8sMocks: func(c *mocks.Client) {
@@ -186,9 +200,12 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
-							SpecGoTemplate: map[string]any{},
+							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
 				},
 			},
 			k8sMocks: func(c *mocks.Client) {
@@ -211,9 +228,12 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
-							SpecGoTemplate: map[string]any{},
+							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
 				},
 			},
 			k8sMocks: func(c *mocks.Client) {
@@ -246,7 +266,7 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 										Kind:       "AccountExtension",
 										APIVersion: "core.openmfp.io/v1alpha1",
 									},
-									SpecGoTemplate: map[string]any{},
+									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
 							},
 						},

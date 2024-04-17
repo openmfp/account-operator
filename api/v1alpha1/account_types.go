@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,7 +52,7 @@ type AccountSpec struct {
 
 type Extension struct {
 	metav1.TypeMeta `json:",inline"`
-	SpecGoTemplate  map[string]any `json:"specGoTemplate"`
+	SpecGoTemplate  apiextensionsv1.JSON `json:"specGoTemplate"`
 }
 
 // AccountStatus defines the observed state of Account

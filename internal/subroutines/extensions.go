@@ -49,10 +49,11 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 		us.SetGroupVersionKind(extension.GroupVersionKind())
 
 		us.SetName(strings.ToLower(extension.GroupVersionKind().Kind))
-		us.SetNamespace(account.GetNamespace())
+		us.SetNamespace(*account.Status.Namespace)
 
 		_, err := controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
-			unstructured.SetNestedMap(us.Object, extension.SpecGoTemplate, "spec")
+			c := us.UnstructuredContent()
+			c["spec"] = extension.SpecGoTemplate
 			return nil
 		})
 		if err != nil {
@@ -84,7 +85,7 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 		us.SetGroupVersionKind(extension.GroupVersionKind())
 
 		us.SetName(strings.ToLower(extension.GroupVersionKind().Kind))
-		us.SetNamespace(account.GetNamespace())
+		us.SetNamespace(*account.Status.Namespace)
 
 		err := e.client.Delete(ctx, &us)
 		if kerrors.IsNotFound(err) {
