@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	v1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
@@ -92,7 +93,7 @@ func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account 
 	for key, value := range keyValues {
 		switch val := value.(type) {
 		case string: // render string values
-			t, err := template.New("field").Parse(val)
+			t, err := template.New("field").Funcs(sprig.FuncMap()).Parse(val)
 			if err != nil {
 				return err
 			}

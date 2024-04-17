@@ -557,6 +557,23 @@ func TestRenderExtensionSpec(t *testing.T) {
 		},
 	}, &us, []string{"spec"})
 	assert.NoError(t, err)
+
+	us = unstructured.Unstructured{
+		Object: map[string]interface{}{},
+	}
+	err = subroutines.RenderExtensionSpec(context.Background(), map[string]any{
+		"foo":    "bar",
+		"number": int64(1),
+		"bool":   true,
+		"nested": map[string]any{
+			"value": "{{ .Account.Spec.Creator | upper }}",
+		},
+	}, &v1alpha1.Account{
+		Spec: v1alpha1.AccountSpec{
+			Creator: "aaron",
+		},
+	}, &us, []string{"spec"})
+	assert.NoError(t, err)
 }
 
 func TestRenderExtensionSpecInvalidTemplate(t *testing.T) {
