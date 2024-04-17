@@ -2,6 +2,7 @@ package subroutines_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
@@ -32,9 +33,10 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 	namespace := "namespace"
 
 	tests := []struct {
-		name     string
-		account  v1alpha1.Account
-		k8sMocks func(*mocks.Client)
+		name        string
+		account     v1alpha1.Account
+		k8sMocks    func(*mocks.Client)
+		expectError bool
 	}{
 		{
 			name: "should work without parent accounts",
@@ -64,6 +66,33 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
+		},
+		{
+			name: "should fail without parent accounts due to random error",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(errors.New(""))
+			},
+			expectError: true,
 		},
 		{
 			name: "should work with 1 level parent accounts",
@@ -207,6 +236,35 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 			},
 		},
 		{
+			name: "should work with 1 level parent accounts but missing namespace namespace label with random error",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(errors.New(""))
+			},
+			expectError: true,
+		},
+		{
 			name: "should work with 1 level parent accounts and account not found",
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -261,7 +319,11 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 
 			routine := subroutines.NewExtensionSubroutine(k8sClient)
 			_, err := routine.Process(context.Background(), &test.account)
-			assert.Nil(t, err)
+			if test.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
 		})
 	}
 }
@@ -270,9 +332,10 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 	namespace := "namespace"
 
 	tests := []struct {
-		name     string
-		account  v1alpha1.Account
-		k8sMocks func(*mocks.Client)
+		name        string
+		account     v1alpha1.Account
+		k8sMocks    func(*mocks.Client)
+		expectError bool
 	}{
 		{
 			name: "should work without parent accounts",
@@ -301,6 +364,35 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil)
 			},
+		},
+		{
+			name: "should fail without parent accounts due to random deletion error",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+
+				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(errors.New(""))
+			},
+			expectError: true,
 		},
 		{
 			name: "should work without parent accounts and already deleted extension",
@@ -407,7 +499,11 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 
 			routine := subroutines.NewExtensionSubroutine(k8sClient)
 			_, err := routine.Finalize(context.Background(), &test.account)
-			assert.Nil(t, err)
+			if test.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
 		})
 	}
 }

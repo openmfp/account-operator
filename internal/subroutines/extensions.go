@@ -28,20 +28,33 @@ var (
 	ErrNoParentAvailable = errors.New("no parent namespace available")
 )
 
+func (e *ExtensionSubroutine) collectExtensions(ctx context.Context, lookupNamespace string) ([]v1alpha1.Extension, error) {
+	var extensions []v1alpha1.Extension
+	for {
+		parentAccount, err := e.getParentAccount(ctx, lookupNamespace)
+		if errors.Is(err, ErrNoParentAvailable) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		lookupNamespace = parentAccount.GetNamespace()
+
+		extensions = append(extensions, parentAccount.Spec.Extensions...)
+	}
+
+	return extensions, nil
+}
+
 func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := instance.(*v1alpha1.Account)
 
 	lookupNamespace := account.GetNamespace()
 
-	var extensionsToApply []v1alpha1.Extension
-	for {
-		parentAccount, err := getParentAccount(ctx, e.client, lookupNamespace)
-		if errors.Is(err, ErrNoParentAvailable) {
-			break
-		}
-		lookupNamespace = parentAccount.GetNamespace()
-
-		extensionsToApply = append(extensionsToApply, parentAccount.Spec.Extensions...)
+	extensionsToApply, err := e.collectExtensions(ctx, lookupNamespace)
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 	}
 
 	for _, extension := range append(extensionsToApply, account.Spec.Extensions...) {
@@ -69,15 +82,9 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 
 	lookupNamespace := account.GetNamespace()
 
-	var extensionsToRemove []v1alpha1.Extension
-	for {
-		parentAccount, err := getParentAccount(ctx, e.client, lookupNamespace)
-		if errors.Is(err, ErrNoParentAvailable) {
-			break
-		}
-		lookupNamespace = parentAccount.GetNamespace()
-
-		extensionsToRemove = append(extensionsToRemove, parentAccount.Spec.Extensions...)
+	extensionsToRemove, err := e.collectExtensions(ctx, lookupNamespace)
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 	}
 
 	for _, extension := range append(extensionsToRemove, account.Spec.Extensions...) {
@@ -103,9 +110,9 @@ func (e *ExtensionSubroutine) GetName() string { return "ExtensionSubroutine" }
 
 func (e *ExtensionSubroutine) Finalizers() []string { return []string{} }
 
-func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alpha1.Account, error) {
+func (e *ExtensionSubroutine) getParentAccount(ctx context.Context, ns string) (*v1alpha1.Account, error) {
 	var namespace v1.Namespace
-	err := cl.Get(ctx, types.NamespacedName{Name: ns}, &namespace)
+	err := e.client.Get(ctx, types.NamespacedName{Name: ns}, &namespace)
 	if kerrors.IsNotFound(err) {
 		return nil, ErrNoParentAvailable
 	}
@@ -124,7 +131,7 @@ func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alph
 	}
 
 	var account v1alpha1.Account
-	err = cl.Get(ctx, types.NamespacedName{Name: accountName, Namespace: accountNamespace}, &account)
+	err = e.client.Get(ctx, types.NamespacedName{Name: accountName, Namespace: accountNamespace}, &account)
 	if kerrors.IsNotFound(err) {
 		return nil, ErrNoParentAvailable
 	}
