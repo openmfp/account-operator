@@ -45,6 +45,17 @@ type AccountSpec struct {
 
 	// The initial creator of this account
 	Creator string `json:"creator"`
+
+	Extensions []Extension `json:"extensions,omitempty"`
+}
+
+type Extension struct {
+	Resource Resource `json:"resource"`
+}
+
+type Resource struct {
+	metav1.TypeMeta `json:",inline"`
+	// SpecGoTemplate  map[string]any `json:"specGoTemplate"`
 }
 
 // AccountStatus defines the observed state of Account
@@ -84,7 +95,9 @@ func init() {
 	SchemeBuilder.Register(&Account{}, &AccountList{})
 }
 
-func (i *Account) GetObservedGeneration() int64          { return i.Status.ObservedGeneration }
-func (i *Account) SetObservedGeneration(g int64)         { i.Status.ObservedGeneration = g }
-func (i *Account) GetNextReconcileTime() metav1.Time     { return i.Status.NextReconcileTime }
-func (i *Account) SetNextReconcileTime(time metav1.Time) { i.Status.NextReconcileTime = time }
+func (i *Account) GetObservedGeneration() int64                { return i.Status.ObservedGeneration }
+func (i *Account) SetObservedGeneration(g int64)               { i.Status.ObservedGeneration = g }
+func (i *Account) GetNextReconcileTime() metav1.Time           { return i.Status.NextReconcileTime }
+func (i *Account) SetNextReconcileTime(time metav1.Time)       { i.Status.NextReconcileTime = time }
+func (i *Account) GetConditions() []metav1.Condition           { return i.Status.Conditions }
+func (i *Account) SetConditions(conditions []metav1.Condition) { i.Status.Conditions = conditions }
