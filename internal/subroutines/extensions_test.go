@@ -14,6 +14,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,6 +54,37 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
 							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
+		{
+			name: "should work without parent accounts and extension spec",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{
+								Raw: []byte(`{"foo":"bar"}`),
+							},
 						},
 					},
 				},
@@ -506,4 +538,37 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRenderExtensionSpec(t *testing.T) {
+	us := unstructured.Unstructured{
+		Object: map[string]interface{}{},
+	}
+	err := subroutines.RenderExtensionSpec(context.Background(), map[string]any{
+		"foo":    "bar",
+		"number": int64(1),
+		"bool":   true,
+		"nested": map[string]any{
+			"value": "{{.Account.Spec.Creator}}",
+		},
+	}, &v1alpha1.Account{
+		Spec: v1alpha1.AccountSpec{
+			Creator: "aaron",
+		},
+	}, &us, []string{"spec"})
+	assert.NoError(t, err)
+}
+
+func TestRenderExtensionSpecInvalidTemplate(t *testing.T) {
+	us := unstructured.Unstructured{
+		Object: map[string]interface{}{},
+	}
+	err := subroutines.RenderExtensionSpec(context.Background(), map[string]any{
+		"foo": "{{ .Account }",
+	}, &v1alpha1.Account{
+		Spec: v1alpha1.AccountSpec{
+			Creator: "aaron",
+		},
+	}, &us, []string{"spec"})
+	assert.Error(t, err)
 }

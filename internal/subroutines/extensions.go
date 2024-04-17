@@ -1,8 +1,11 @@
 package subroutines
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"strings"
+	"text/template"
 
 	v1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
@@ -65,9 +68,17 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 		us.SetNamespace(*account.Status.Namespace)
 
 		_, err := controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
-			c := us.UnstructuredContent()
-			c["spec"] = extension.SpecGoTemplate
-			return nil
+			if len(extension.SpecGoTemplate.Raw) == 0 {
+				return nil
+			}
+			var keyValues map[string]any
+			err := json.NewDecoder(bytes.NewReader(extension.SpecGoTemplate.Raw)).Decode(&keyValues)
+			if err != nil {
+				return err
+			}
+
+			path := []string{"spec"}
+			return RenderExtensionSpec(ctx, keyValues, account, &us, path)
 		})
 		if err != nil {
 			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
@@ -75,6 +86,40 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account *v1alpha1.Account, us *unstructured.Unstructured, path []string) error {
+	for key, value := range keyValues {
+		switch val := value.(type) {
+		case string: // render string values
+			t, err := template.New("field").Parse(val)
+			if err != nil {
+				return err
+			}
+
+			var rendered bytes.Buffer
+			err = t.Execute(&rendered, map[string]any{
+				"Account": account,
+			})
+			if err != nil {
+				return err
+			}
+
+			err = unstructured.SetNestedField(us.Object, rendered.String(), append(path, key)...)
+			if err != nil {
+				return err
+			}
+		case map[string]any:
+			return RenderExtensionSpec(ctx, val, account, us, append(path, key))
+		default: // any other primitive type
+			err := unstructured.SetNestedField(us.Object, val, append(path, key)...)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
