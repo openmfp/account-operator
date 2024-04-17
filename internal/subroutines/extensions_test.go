@@ -135,6 +135,122 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
+		{
+			name: "should work with 1 level parent accounts but missing namespace owner label",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+					ns := o.(*corev1.Namespace)
+
+					*ns = corev1.Namespace{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								subroutines.NamespaceAccountOwnerLabel: "first-level",
+							},
+						},
+					}
+					return nil
+				}).Once()
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
+		{
+			name: "should work with 1 level parent accounts but missing namespace namespace label",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
+		{
+			name: "should work with 1 level parent accounts and account not found",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+					ns := o.(*corev1.Namespace)
+
+					*ns = corev1.Namespace{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								subroutines.NamespaceAccountOwnerLabel:          "first-level",
+								subroutines.NamespaceAccountOwnerNamespaceLabel: "first-level",
+							},
+						},
+					}
+					return nil
+				}).Once()
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Account"))
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
