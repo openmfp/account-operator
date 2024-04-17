@@ -50,12 +50,8 @@ type AccountSpec struct {
 }
 
 type Extension struct {
-	Resource Resource `json:"resource"`
-}
-
-type Resource struct {
 	metav1.TypeMeta `json:",inline"`
-	// SpecGoTemplate  map[string]any `json:"specGoTemplate"`
+	SpecGoTemplate  map[string]any `json:"specGoTemplate"`
 }
 
 // AccountStatus defines the observed state of Account
