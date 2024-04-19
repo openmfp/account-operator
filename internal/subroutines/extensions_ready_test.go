@@ -107,6 +107,29 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			expectError: true,
 		},
 		{
+			name: "should respect ready condition and fail in case the namespace cannot be retrived",
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(errors.New("some error"))
+			},
+			account: v1alpha1.Account{
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							ReadyConditionType: &readyCondition,
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &defaultNamespace,
+				},
+			},
+			expectError: true,
+		},
+		{
 			name: "should respect ready condition and fail in case the extension retrieval failed",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))

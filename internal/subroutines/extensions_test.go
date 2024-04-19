@@ -553,7 +553,7 @@ func TestRenderExtensionSpec(t *testing.T) {
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "aaron",
+			Creator: "user",
 		},
 	}, &us, []string{"spec"})
 	assert.NoError(t, err)
@@ -570,7 +570,7 @@ func TestRenderExtensionSpec(t *testing.T) {
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "aaron",
+			Creator: "user",
 		},
 	}, &us, []string{"spec"})
 	assert.NoError(t, err)
@@ -584,7 +584,7 @@ func TestRenderExtensionSpecInvalidTemplate(t *testing.T) {
 		"foo": "{{ .Account }",
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "aaron",
+			Creator: "user",
 		},
 	}, &us, []string{"spec"})
 	assert.Error(t, err)
