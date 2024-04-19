@@ -80,6 +80,12 @@ spec:
                         In CamelCase.
                         More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                       type: string
+                    readyConditionType:
+                      description: |-
+                        The type of a condition that must be set to True on the Extension object
+                        for the extension to be considered reconciled and ready. If this is empty,
+                        the extension is considered ready.
+                      type: string
                     specGoTemplate:
                       x-kubernetes-preserve-unknown-fields: true
                   required:

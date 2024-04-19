@@ -33,6 +33,9 @@ type Config struct {
 		Extension struct {
 			Enabled bool `envconfig:"default=true"`
 		}
+		ExtensionReady struct {
+			Enabled bool `envconfig:"default=true"`
+		}
 	}
 	MaxConcurrentReconciles int `envconfig:"default=10"`
 }

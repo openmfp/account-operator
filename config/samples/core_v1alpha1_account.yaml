@@ -12,3 +12,4 @@ spec:
     kind: AccountExtension
     specGoTemplate:
       foo: bar
+    readyConditionType: "Ready"
