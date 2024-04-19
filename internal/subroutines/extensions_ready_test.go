@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -32,10 +33,11 @@ func TestExtensionReadySubroutine(t *testing.T) {
 	defaultNamespace := "default"
 
 	tests := []struct {
-		name        string
-		k8sMocks    func(*mocks.Client)
-		account     v1alpha1.Account
-		expectError bool
+		name           string
+		k8sMocks       func(*mocks.Client)
+		account        v1alpha1.Account
+		expectError    bool
+		expectedResult ctrl.Result
 	}{
 		{
 			name: "should respect ready condition and return sucessfully",
@@ -83,7 +85,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			},
 		},
 		{
-			name: "should respect ready condition and fail in case the extension is not found",
+			name: "should respect ready condition and requeue in case the extension is not found",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
@@ -104,7 +106,8 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					Namespace: &defaultNamespace,
 				},
 			},
-			expectError: true,
+			expectError:    false,
+			expectedResult: ctrl.Result{Requeue: true},
 		},
 		{
 			name: "should respect ready condition and fail in case the namespace cannot be retrived",
@@ -216,11 +219,14 @@ func TestExtensionReadySubroutine(t *testing.T) {
 
 			routine := subroutines.NewExtensionReadySubroutine(k8sClient)
 
-			_, err := routine.Process(context.Background(), &test.account)
+			result, err := routine.Process(context.Background(), &test.account)
 			if test.expectError {
 				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
+			}
+			if (test.expectedResult != ctrl.Result{}) {
+				assert.Equal(t, test.expectedResult, result)
 			}
 		})
 	}

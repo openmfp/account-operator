@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -50,41 +48,38 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 		us.SetName(strings.ToLower(extension.Kind))
 		us.SetNamespace(*account.Status.Namespace)
 
-		err = wait.ExponentialBackoff(retry.DefaultBackoff, func() (done bool, err error) {
-			err = e.client.Get(ctx, client.ObjectKeyFromObject(&us), &us)
-			if kerrors.IsNotFound(err) {
-				return false, nil
-			}
-			if err != nil {
-				return false, err
-			}
-
-			conditions, hasField, err := unstructured.NestedSlice(us.Object, "status", "conditions")
-			if !hasField || err != nil {
-				return false, err
-			}
-
-			parsedConditions := make([]metav1.Condition, len(conditions))
-			for i, cond := range conditions {
-
-				intermediate, err := json.Marshal(cond)
-				if err != nil {
-					return false, err
-				}
-
-				var parsed metav1.Condition
-				err = json.NewDecoder(bytes.NewReader(intermediate)).Decode(&parsed)
-				if err != nil {
-					return false, err
-				}
-
-				parsedConditions[i] = parsed
-			}
-
-			return meta.IsStatusConditionTrue(parsedConditions, *extension.ReadyConditionType), nil
-		})
+		err = e.client.Get(ctx, client.ObjectKeyFromObject(&us), &us)
+		if kerrors.IsNotFound(err) {
+			return ctrl.Result{Requeue: true}, nil
+		}
 		if err != nil {
 			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+		}
+
+		conditions, hasField, err := unstructured.NestedSlice(us.Object, "status", "conditions")
+		if !hasField || err != nil {
+			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+		}
+
+		parsedConditions := make([]metav1.Condition, len(conditions))
+		for i, cond := range conditions {
+
+			intermediate, err := json.Marshal(cond)
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+
+			var parsed metav1.Condition
+			err = json.NewDecoder(bytes.NewReader(intermediate)).Decode(&parsed)
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+
+			parsedConditions[i] = parsed
+		}
+
+		if !meta.IsStatusConditionTrue(parsedConditions, *extension.ReadyConditionType) {
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
