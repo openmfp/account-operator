@@ -110,6 +110,53 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			expectedResult: ctrl.Result{Requeue: true},
 		},
 		{
+			name: "should respect ready condition and requeue in case the extension is not yet ready",
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+					us := o.(*unstructured.Unstructured)
+
+					cond := []metav1.Condition{
+						{
+							Type:   readyCondition,
+							Status: metav1.ConditionFalse,
+						},
+					}
+
+					out, err := json.Marshal(cond)
+					assert.NoError(t, err)
+
+					conditionMap := []interface{}{}
+					err = json.Unmarshal(out, &conditionMap)
+					assert.NoError(t, err)
+
+					us.Object["status"] = map[string]any{
+						"conditions": conditionMap,
+					}
+
+					return nil
+				}).Once()
+			},
+			account: v1alpha1.Account{
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							ReadyConditionType: &readyCondition,
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &defaultNamespace,
+				},
+			},
+			expectError:    false,
+			expectedResult: ctrl.Result{Requeue: true},
+		},
+		{
 			name: "should respect ready condition and fail in case the namespace cannot be retrived",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(errors.New("some error"))
