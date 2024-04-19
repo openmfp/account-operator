@@ -65,13 +65,13 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 		for i, cond := range conditions {
 
 			intermediate, err := json.Marshal(cond)
-			if err != nil {
+			if err != nil { // coverage-ignore
 				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 			}
 
 			var parsed metav1.Condition
 			err = json.NewDecoder(bytes.NewReader(intermediate)).Decode(&parsed)
-			if err != nil {
+			if err != nil { // coverage-ignore
 				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 			}
 
