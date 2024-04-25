@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/internal/subroutines"
-	"github.com/openmfp/account-operator/internal/subroutines/mocks"
+	"github.com/openmfp/account-operator/pkg/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
@@ -541,6 +541,7 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 }
 
 func TestRenderExtensionSpec(t *testing.T) {
+	creator := "user"
 	us := unstructured.Unstructured{
 		Object: map[string]interface{}{},
 	}
@@ -553,7 +554,7 @@ func TestRenderExtensionSpec(t *testing.T) {
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "user",
+			Creator: &creator,
 		},
 	}, &us, []string{"spec"})
 	assert.NoError(t, err)
@@ -570,13 +571,14 @@ func TestRenderExtensionSpec(t *testing.T) {
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "user",
+			Creator: &creator,
 		},
 	}, &us, []string{"spec"})
 	assert.NoError(t, err)
 }
 
 func TestRenderExtensionSpecInvalidTemplate(t *testing.T) {
+	creator := ""
 	us := unstructured.Unstructured{
 		Object: map[string]interface{}{},
 	}
@@ -584,7 +586,7 @@ func TestRenderExtensionSpecInvalidTemplate(t *testing.T) {
 		"foo": "{{ .Account }",
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
-			Creator: "user",
+			Creator: &creator,
 		},
 	}, &us, []string{"spec"})
 	assert.Error(t, err)

@@ -20,7 +20,7 @@ import (
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/internal/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	networkv1 "k8s.io/api/networking/v1"
@@ -84,7 +84,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Nil(err)
 
 	accountReconciler := NewAccountReconciler(log, suite.kubernetesManager, cfg)
-	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg)
+	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
 	suite.Nil(err)
 
 	go suite.startController()

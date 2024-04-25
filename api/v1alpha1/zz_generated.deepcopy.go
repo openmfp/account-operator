@@ -97,6 +97,11 @@ func (in *AccountSpec) DeepCopyInto(out *AccountSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Creator != nil {
+		in, out := &in.Creator, &out.Creator
+		*out = new(string)
+		**out = **in
+	}
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
 		*out = make([]Extension, len(*in))

@@ -115,7 +115,7 @@ func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
 	}
 
 	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg)
-	if err := accountReconciler.SetupWithManager(mgr, cfg); err != nil {
+	if err := accountReconciler.SetupWithManager(mgr, cfg, log); err != nil {
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
 	}
 
