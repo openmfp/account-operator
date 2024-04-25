@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/internal/subroutines/mocks"
+	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
 
 const defaultExpectedTestNamespace = "account-test"

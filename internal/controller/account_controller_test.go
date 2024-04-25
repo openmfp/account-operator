@@ -20,7 +20,7 @@ import (
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/internal/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 )

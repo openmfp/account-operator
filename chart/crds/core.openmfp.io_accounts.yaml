@@ -72,7 +72,6 @@ spec:
                 - account
                 type: string
             required:
-            - creator
             - displayName
             - type
             type: object
