@@ -44,7 +44,7 @@ type AccountSpec struct {
 	Description *string `json:"description,omitempty"`
 
 	// The initial creator of this account
-	Creator string `json:"creator"`
+	Creator *string `json:"creator,omitempty"`
 }
 
 // AccountStatus defines the observed state of Account
