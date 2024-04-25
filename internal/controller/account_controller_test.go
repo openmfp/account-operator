@@ -82,7 +82,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Nil(err)
 
 	accountReconciler := NewAccountReconciler(log, suite.kubernetesManager, cfg)
-	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg)
+	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
 	suite.Nil(err)
 
 	go suite.startController()

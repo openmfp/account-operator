@@ -7,6 +7,7 @@
 bin/*
 Dockerfile.cross
 .secret
+.env
 
 # Test binary, built with `go test -c`
 *.test
