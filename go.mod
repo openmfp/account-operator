@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
-	github.com/openmfp/golang-commons v0.16.0
+	github.com/openmfp/golang-commons v0.21.0
 	github.com/rs/zerolog v1.32.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.9.0

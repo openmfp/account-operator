@@ -45,7 +45,7 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
 	}
 	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles(),
+		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),
 	}
 }
 
@@ -53,6 +53,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return r.lifecycle.Reconcile(ctx, req, &corev1alpha1.Account{})
 }
 
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config, eventPredicates ...predicate.Predicate) error {
-	return r.lifecycle.SetupWithManager(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, r, eventPredicates...)
+func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config, log *logger.Logger, eventPredicates ...predicate.Predicate) error {
+	return r.lifecycle.SetupWithManager(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, r, log, eventPredicates...)
 }
