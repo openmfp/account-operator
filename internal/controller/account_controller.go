@@ -24,7 +24,7 @@ import (
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/internal/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/logger"
 )
