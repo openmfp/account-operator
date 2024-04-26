@@ -42,13 +42,14 @@ func (r *NamespaceSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.io/finalizer"}
 }
 
-func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	instance := runtimeObj.(*corev1alpha1.Account)
+func (r *NamespaceSubroutine) Process(ctx context.Context, instance lifecycle.RuntimeObject, specObject interface{}, statusObject interface{}) (ctrl.Result, errors.OperatorError) {
+	spec := specObject.(corev1alpha1.AccountSpec)
+	status := statusObject.(corev1alpha1.AccountStatus)
 
 	// Test if namespace was already created based on status
 	createdNamespace := &v1.Namespace{}
-	if instance.Status.Namespace != nil {
-		createdNamespace = generateNamespace(instance)
+	if status.Namespace != nil {
+		createdNamespace = generateNamespace(instance, status)
 		_, err := controllerutil.CreateOrUpdate(ctx, r.client, createdNamespace, func() error {
 			return setNamespaceLabels(createdNamespace, instance)
 		})
@@ -56,8 +57,8 @@ func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 	} else {
-		if instance.Spec.Namespace != nil {
-			createdNamespace = &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: *instance.Spec.Namespace}}
+		if spec.Namespace != nil {
+			createdNamespace = &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: *spec.Namespace}}
 			_, err := controllerutil.CreateOrUpdate(ctx, r.client, createdNamespace, func() error {
 				return setNamespaceLabels(createdNamespace, instance)
 			})
@@ -66,7 +67,7 @@ func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 			}
 		} else {
 			// Create New Namespace
-			createdNamespace = generateNamespace(instance)
+			createdNamespace = generateNamespace(instance, status)
 			err := r.client.Create(ctx, createdNamespace)
 			if err != nil {
 				return ctrl.Result{}, errors.NewOperatorError(err, true, true)
@@ -74,14 +75,14 @@ func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 		}
 	}
 
-	instance.Status.Namespace = &createdNamespace.Name
+	status.Namespace = &createdNamespace.Name
 	return ctrl.Result{}, nil
 }
 
 var NamespaceOwnedByAnotherAccountErr = errors.New("Namespace already owned by another account")
 var NamespaceOwnedByAnAccountInAnotherNamespaceErr = errors.New("Namespace already owned by another account in another namespace")
 
-func setNamespaceLabels(ns *v1.Namespace, instance *corev1alpha1.Account) error {
+func setNamespaceLabels(ns *v1.Namespace, instance lifecycle.RuntimeObject) error {
 	hasOwnerLabel := hasLabel(NamespaceAccountOwnerLabel, ns.Labels)
 	hasOwnerNamespaceLabel := hasLabel(NamespaceAccountOwnerNamespaceLabel, ns.Labels)
 	if hasOwnerLabel && ns.Labels[NamespaceAccountOwnerLabel] != instance.GetName() {
@@ -106,7 +107,7 @@ func hasLabel(key string, labels map[string]string) bool {
 	return ok
 }
 
-func generateNamespace(instance *corev1alpha1.Account) *v1.Namespace {
+func generateNamespace(instance lifecycle.RuntimeObject, status corev1alpha1.AccountStatus) *v1.Namespace {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -116,8 +117,8 @@ func generateNamespace(instance *corev1alpha1.Account) *v1.Namespace {
 		},
 	}
 
-	if instance.Status.Namespace != nil {
-		ns.Name = *instance.Status.Namespace
+	if status.Namespace != nil {
+		ns.Name = *status.Namespace
 	} else {
 		ns.ObjectMeta.GenerateName = NamespaceNamePrefix
 	}
