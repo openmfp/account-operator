@@ -42,9 +42,9 @@ func (r *NamespaceSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.io/finalizer"}
 }
 
-func (r *NamespaceSubroutine) Process(ctx context.Context, instance lifecycle.RuntimeObject, specObject interface{}, statusObject interface{}) (ctrl.Result, errors.OperatorError) {
-	spec := specObject.(corev1alpha1.AccountSpec)
-	status := statusObject.(corev1alpha1.AccountStatus)
+func (r *NamespaceSubroutine) Process(ctx context.Context, instance lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	spec := instance.GetSpec().(corev1alpha1.AccountSpec)
+	status := instance.GetStatus().(corev1alpha1.AccountStatus)
 
 	// Test if namespace was already created based on status
 	createdNamespace := &v1.Namespace{}
