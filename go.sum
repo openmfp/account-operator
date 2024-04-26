@@ -114,6 +114,8 @@ github.com/openmfp/golang-commons v0.21.0 h1:WOyV4jxNZj301XarzTncuYvAcgOorUD/MUx
 github.com/openmfp/golang-commons v0.21.0/go.mod h1:AE1DH+O57gAIKOKD6waJPAxXRo47nbDQp4V08mJ+Ux8=
 github.com/openmfp/golang-commons v0.21.1-0.20240426065625-dc65fc689a4f h1:25HhHm8s49Wsea5DKiVeC5mWQsTn/R9AHf9x7pMBJ+M=
 github.com/openmfp/golang-commons v0.21.1-0.20240426065625-dc65fc689a4f/go.mod h1:AE1DH+O57gAIKOKD6waJPAxXRo47nbDQp4V08mJ+Ux8=
+github.com/openmfp/golang-commons v0.21.1-0.20240426080029-df31069123f4 h1:7lCPHrvlC3mzQJlgDCmBbK+aiLvz8uiv4rHajoNWU+I=
+github.com/openmfp/golang-commons v0.21.1-0.20240426080029-df31069123f4/go.mod h1:AE1DH+O57gAIKOKD6waJPAxXRo47nbDQp4V08mJ+Ux8=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
 github.com/pingcap/errors v0.11.4/go.mod h1:Oi8TUi2kEtXXLMJk9l1cGmz20kV3TaQ0usTwv5KuLY8=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
