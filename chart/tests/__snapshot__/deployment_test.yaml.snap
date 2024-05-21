@@ -75,7 +75,7 @@ operator match the snapshot:
                 - --leader-elect
                 - --log-level=
                 - --health-probe-bind-address=:8081
-              image: :latest
+              image: ghcr.io/openmfp/account-operator:latest
               livenessProbe:
                 httpGet:
                   path: /healthz

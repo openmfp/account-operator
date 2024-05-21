@@ -1,4 +1,5 @@
 image:
+  name: ghcr.io/openmfp/account-operator
   tag: latest
 
 health:
