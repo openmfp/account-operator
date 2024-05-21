@@ -50,8 +50,8 @@ spec:
               cpu: {{ .Values.deployment.resources.limits.cpu }}
               memory: {{ .Values.deployment.resources.limits.memory }}
             requests:
-              cpu: 150m
-              memory: 128Mi
+              cpu: {{ .Values.deployment.resources.requests.cpu }}
+              memory: {{ .Values.deployment.resources.requests.memory }}
       terminationGracePeriodSeconds: 10
 
 

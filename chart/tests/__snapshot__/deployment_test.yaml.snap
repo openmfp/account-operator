@@ -3,7 +3,7 @@ operator match the snapshot:
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
-      name: RELEASE-NAME-cr
+      name: RELEASE-NAME
     rules:
       - apiGroups:
           - core.openmfp.io
@@ -42,11 +42,11 @@ operator match the snapshot:
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
     metadata:
-      name: RELEASE-NAME-crb
+      name: RELEASE-NAME
     roleRef:
       apiGroup: rbac.authorization.k8s.io
       kind: ClusterRole
-      name: RELEASE-NAME-cr
+      name: RELEASE-NAME
     subjects:
       - kind: ServiceAccount
         name: RELEASE-NAME-sa
