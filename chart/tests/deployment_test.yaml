@@ -1,0 +1,10 @@
+suite: operator
+templates:
+  - deployment.yaml
+  - service-account.yaml
+values:
+  - ../test-values.yaml
+tests:
+  - it: operator match the snapshot
+    asserts:
+      - matchSnapshot: {}

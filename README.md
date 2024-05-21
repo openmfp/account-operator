@@ -14,7 +14,7 @@ The openMFP account-operator manages the core Account resource which is a groupi
 - Account Namespace management
 - Instantiation of Account Resource in Namespace
 - Support for Spreading Reconciles to improve performance on operator restart
-- Validating webhook to ensure that imutable information is not changed
+- Validating webhook to ensure that immutable information is not changed
 - Cleanup on Account deletion including namespace cleanup
 
 ## Getting started

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      service: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        service: {{ .Release.Name }}
+        control-plane: controller-manager
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8080"
+    spec:
+      serviceAccountName: {{ .Release.Name }}-sa
+      containers:
+        - args:
+          - --leader-elect
+          - --log-level={{ .Values.logLevel }}
+          - "--health-probe-bind-address=:{{ .Values.health.port }}"
+          image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+          name: manager
+          securityContext:
+            runAsNonRoot: true
+          ports:
+          - containerPort: 9443
+            name: webhook-server
+            protocol: TCP
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+          - name: health-port
+            containerPort: {{ .Values.health.port }}
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.health.port}}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.health.port}}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 260m
+              memory: 512Mi
+            requests:
+              cpu: 150m
+              memory: 128Mi
+      terminationGracePeriodSeconds: 10
+
+
+

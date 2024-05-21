@@ -1,2 +1,5 @@
 image:
   tag: latest
+
+health:
+  port: 8081
