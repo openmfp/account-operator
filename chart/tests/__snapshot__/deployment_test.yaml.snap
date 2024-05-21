@@ -1,5 +1,57 @@
 operator match the snapshot:
   1: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: RELEASE-NAME-cr
+    rules:
+      - apiGroups:
+          - core.openmfp.io
+        resources:
+          - accounts
+        verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+      - apiGroups:
+          - core.openmfp.io
+        resources:
+          - accounts
+          - accounts/status
+        verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+      - apiGroups:
+          - ""
+        resources:
+          - namespaces
+        verbs:
+          - get
+          - list
+          - watch
+  2: |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: RELEASE-NAME-crb
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: RELEASE-NAME-cr
+    subjects:
+      - kind: ServiceAccount
+        name: RELEASE-NAME-sa
+        namespace: NAMESPACE
+  3: |
     apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -13,7 +65,7 @@ operator match the snapshot:
       template:
         metadata:
           annotations:
-            traffic.sidecar.istio.io/excludeInboundPorts: "8080"
+            sidecar.istio.io/inject: "false"
           labels:
             control-plane: controller-manager
             service: RELEASE-NAME
@@ -58,7 +110,7 @@ operator match the snapshot:
                 runAsNonRoot: true
           serviceAccountName: RELEASE-NAME-sa
           terminationGracePeriodSeconds: 10
-  2: |
+  4: |
     apiVersion: v1
     kind: ServiceAccount
     metadata:
