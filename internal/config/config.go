@@ -8,7 +8,6 @@ import (
 
 // Config struct to hold the app config
 type Config struct {
-	Kubeconfig      string `envconfig:"optional"`
 	DebugLabelValue string `envconfig:"optional"`
 	Log             struct {
 		Level  string `envconfig:"default=info"`
