@@ -61,7 +61,7 @@ operator match the snapshot:
       name: RELEASE-NAME
     subjects:
       - kind: ServiceAccount
-        name: RELEASE-NAME-sa
+        name: RELEASE-NAME
         namespace: NAMESPACE
   3: |
     apiVersion: apps/v1
