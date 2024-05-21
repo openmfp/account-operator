@@ -2,6 +2,8 @@ image:
   name: ghcr.io/openmfp/account-operator
   tag: latest
 
+imagePullSecrets: "github"
+
 health:
   port: 8081
 
