@@ -4,7 +4,7 @@ metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  revisionHistoryLimit: 3
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
   selector:
     matchLabels:
       service: {{ .Release.Name }}
@@ -16,7 +16,7 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
     spec:
-      serviceAccountName: {{ .Release.Name }}-sa
+      serviceAccountName: {{ .Release.Name }}
       containers:
         - args:
           - --leader-elect
@@ -27,10 +27,7 @@ spec:
           securityContext:
             runAsNonRoot: true
           ports:
-          - containerPort: 9443
-            name: webhook-server
-            protocol: TCP
-          - containerPort: 8080
+          - containerPort: {{ .Values.metrics.port }}
             name: metrics
             protocol: TCP
           - name: health-port
@@ -50,8 +47,8 @@ spec:
             periodSeconds: 10
           resources:
             limits:
-              cpu: 260m
-              memory: 512Mi
+              cpu: {{ .Values.deployment.resources.limits.cpu }}
+              memory: {{ .Values.deployment.resources.limits.memory }}
             requests:
               cpu: 150m
               memory: 128Mi
