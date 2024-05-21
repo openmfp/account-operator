@@ -46,6 +46,7 @@ operator match the snapshot:
           - ""
         resources:
           - namespaces
+          - events
         verbs:
           - get
           - list
