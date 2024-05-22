@@ -19,6 +19,7 @@ spec:
       serviceAccountName: {{ .Release.Name }}
       containers:
         - args:
+          - operator
           - --leader-elect
           - --log-level={{ .Values.logLevel }}
           - "--health-probe-bind-address=:{{ .Values.health.port }}"
