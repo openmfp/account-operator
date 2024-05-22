@@ -46,13 +46,6 @@ operator match the snapshot:
           - ""
         resources:
           - namespaces
-        verbs:
-          - get
-          - list
-          - watch
-      - apiGroups:
-          - ""
-        resources:
           - events
         verbs:
           - get
