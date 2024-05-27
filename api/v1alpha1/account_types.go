@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,6 +46,18 @@ type AccountSpec struct {
 
 	// The initial creator of this account
 	Creator *string `json:"creator,omitempty"`
+
+	Extensions []Extension `json:"extensions,omitempty"`
+}
+
+type Extension struct {
+	metav1.TypeMeta `json:",inline"`
+	SpecGoTemplate  apiextensionsv1.JSON `json:"specGoTemplate"`
+
+	// The type of a condition that must be set to True on the Extension object
+	// for the extension to be considered reconciled and ready. If this is empty,
+	// the extension is considered ready.
+	ReadyConditionType *string `json:"readyConditionType,omitempty"`
 }
 
 // AccountStatus defines the observed state of Account

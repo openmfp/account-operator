@@ -62,6 +62,36 @@ spec:
                 description: The display name for this account
                 maxLength: 255
                 type: string
+              extensions:
+                items:
+                  properties:
+                    apiVersion:
+                      description: |-
+                        APIVersion defines the versioned schema of this representation of an object.
+                        Servers should convert recognized schemas to the latest internal value, and
+                        may reject unrecognized values.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+                      type: string
+                    kind:
+                      description: |-
+                        Kind is a string value representing the REST resource this object represents.
+                        Servers may infer this from the endpoint the client submits requests to.
+                        Cannot be updated.
+                        In CamelCase.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      type: string
+                    readyConditionType:
+                      description: |-
+                        The type of a condition that must be set to True on the Extension object
+                        for the extension to be considered reconciled and ready. If this is empty,
+                        the extension is considered ready.
+                      type: string
+                    specGoTemplate:
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - specGoTemplate
+                  type: object
+                type: array
               namespace:
                 description: Namespace is the account should take ownership of
                 type: string

@@ -44,6 +44,12 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	if cfg.Subroutines.Namespace.Enabled {
 		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
 	}
+	if cfg.Subroutines.Extension.Enabled {
+		subs = append(subs, subroutines.NewExtensionSubroutine(mgr.GetClient()))
+	}
+	if cfg.Subroutines.ExtensionReady.Enabled {
+		subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
+	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),
 	}
