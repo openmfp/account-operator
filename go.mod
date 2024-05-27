@@ -4,8 +4,8 @@ go 1.22.2
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/openmfp/golang-commons v0.32.0
-	github.com/rs/zerolog v1.32.0
+	github.com/openmfp/golang-commons v0.35.0
+	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/vrischmann/envconfig v1.3.0
@@ -14,7 +14,7 @@ require (
 	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.1
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
-	sigs.k8s.io/controller-runtime v0.18.2
+	sigs.k8s.io/controller-runtime v0.18.3
 )
 
 require (

@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	defaultTestTimeout  = 10 * time.Second
+	defaultTestTimeout  = 5 * time.Second
 	defaultTickInterval = 250 * time.Millisecond
 	defaultNamespace    = "default"
 )
@@ -47,13 +47,14 @@ func (suite *AccountTestSuite) SetupSuite() {
 	logConfig := logger.DefaultConfig()
 	logConfig.NoJSON = true
 	logConfig.Name = "AccountTestSuite"
-	log, err := logger.New(logConfig)
-	suite.Nil(err)
+	logConfig.Level = "debug"
 	// Disable color logging as vs-code does not support color logging in the test output
-	log = logger.NewFromZerolog(log.Output(&zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}))
+	logConfig.Output = &zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}
+	log, err := logger.New(logConfig)
+	suite.Require().NoError(err)
 
 	cfg, err := config.NewFromEnv()
-	suite.Nil(err)
+	suite.Require().NoError(err)
 
 	testContext, _, _ := openmfpcontext.StartContext(log, cfg, cfg.ShutdownTimeout)
 
@@ -64,28 +65,28 @@ func (suite *AccountTestSuite) SetupSuite() {
 		ErrorIfCRDPathMissing: true,
 	}
 
-	k8scfg, err := suite.testEnv.Start()
-	suite.Nil(err)
+	k8sCfg, err := suite.testEnv.Start()
+	suite.Require().NoError(err)
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(v1.AddToScheme(scheme.Scheme))
 
 	// +kubebuilder:scaffold:scheme
 
-	suite.kubernetesClient, err = client.New(k8scfg, client.Options{
+	suite.kubernetesClient, err = client.New(k8sCfg, client.Options{
 		Scheme: scheme.Scheme,
 	})
-	suite.Nil(err)
+	suite.Require().NoError(err)
 	ctrl.SetLogger(log.Logr())
-	suite.kubernetesManager, err = ctrl.NewManager(k8scfg, ctrl.Options{
+	suite.kubernetesManager, err = ctrl.NewManager(k8sCfg, ctrl.Options{
 		Scheme:      scheme.Scheme,
 		BaseContext: func() context.Context { return testContext },
 	})
-	suite.Nil(err)
+	suite.Require().NoError(err)
 
 	accountReconciler := NewAccountReconciler(log, suite.kubernetesManager, cfg)
 	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 
 	go suite.startController()
 }
@@ -100,7 +101,7 @@ func (suite *AccountTestSuite) startController() {
 	var controllerContext context.Context
 	controllerContext, suite.cancel = context.WithCancel(context.Background())
 	err := suite.kubernetesManager.Start(controllerContext)
-	suite.Nil(err)
+	suite.Require().NoError(err)
 }
 
 func (suite *AccountTestSuite) TestAddingFinalizer() {
@@ -198,7 +199,7 @@ func (suite *AccountTestSuite) TestNamespaceUsingExisitingNamespace() {
 			Namespace: defaultNamespace,
 		}, &createdAccount)
 		return err == nil && createdAccount.Status.Namespace != nil
-	}, time.Second*30, time.Millisecond*250)
+	}, defaultTestTimeout, defaultTickInterval)
 
 	suite.Assert().Equal(existingNamespaceName, *createdAccount.Status.Namespace)
 	// Test if Namespace exists
