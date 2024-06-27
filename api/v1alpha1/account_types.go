@@ -71,8 +71,8 @@ type AccountStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.displayName",name="Display Name",type=string
-// +kubebuilder:printcolumn:JSONPath=".status.Namespace",name="Account Namespace",type=string
-// +kubebuilder:printcolumn:JSONPath=".spec.accountRole",name="Account Role",type=string
+// +kubebuilder:printcolumn:JSONPath=".status.namespace",name="Account Namespace",type=string
+// +kubebuilder:printcolumn:JSONPath=".spec.type",name="Type",type=string
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 
 // Account is the Schema for the accounts API

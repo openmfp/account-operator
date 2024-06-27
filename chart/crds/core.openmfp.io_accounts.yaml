@@ -18,11 +18,11 @@ spec:
     - jsonPath: .spec.displayName
       name: Display Name
       type: string
-    - jsonPath: .status.Namespace
+    - jsonPath: .status.namespace
       name: Account Namespace
       type: string
-    - jsonPath: .spec.accountRole
-      name: Account Role
+    - jsonPath: .spec.type
+      name: Type
       type: string
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
