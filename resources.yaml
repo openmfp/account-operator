@@ -9,9 +9,9 @@ components:
         version: (( values.VERSION ))
         input:
           type: helm
-          path: (( values.CHART_FOLDER ))
+          path: (( values.CHART_URL ))
           version: (( values.VERSION ))
-          repository: (( values.HELM_REPO ))
+          repository: charts/(( values.REPO_NAME ))
       - name: image
         type: ociArtifact
         version: (( values.VERSION ))
