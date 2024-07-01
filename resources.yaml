@@ -1,0 +1,20 @@
+components:
+  - name: github.com/openmfp/account-operator
+    version: (( values.VERSION ))
+    provider:
+      name: opemmfp.org
+    resources:
+      - name: chart
+        type: helmChart
+        version: (( values.VERSION ))
+        input:
+          type: helm
+          path: ./chart
+          version: (( values.VERSION ))
+          repository: helm/account-operator
+      - name: image
+        type: ociArtifact
+        version: (( values.VERSION ))
+        access:
+          type: ociArtifact
+          imageReference: ghcr.io/openmfp/account-operator:(( values.VERSION ))

@@ -6,9 +6,12 @@ jobs:
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
-    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@main
+    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@ocm-job
     secrets: inherit
     with:
       imageTagName: ghcr.io/openmfp/account-operator
       useTask: true
       useLocalCoverageConfig: true
+      componentName: ${{ github.server_url }}/${{ github.repository }}
+      release_branch: feat/ocm
+
