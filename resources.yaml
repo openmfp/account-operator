@@ -11,10 +11,10 @@ components:
           type: helm
           path: (( values.CHART_FOLDER ))
           version: (( values.VERSION ))
-          repository: helm/account-operator
+          repository: (( values.HELM_REPO ))
       - name: image
         type: ociArtifact
         version: (( values.VERSION ))
         access:
           type: ociArtifact
-          imageReference: (( values.IMAGE)):(( values.VERSION ))
+          imageReference: (( values.IMAGE )):(( values.VERSION ))
