@@ -17,4 +17,4 @@ components:
         version: (( values.VERSION ))
         access:
           type: ociArtifact
-          imageReference: (( values.IMAGE )):(( values.VERSION ))
+          imageReference: (( values.IMAGE ))
