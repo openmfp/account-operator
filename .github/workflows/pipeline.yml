@@ -13,5 +13,6 @@ jobs:
       useTask: true
       useLocalCoverageConfig: true
       componentName: github.com/${{ github.repository }}
+      componentRepo: github.com/${{ github.repository }}/ocm
       release_branch: feat/ocm
 
