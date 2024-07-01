@@ -6,6 +6,7 @@ components:
     resources:
       - name: chart
         type: helmChart
+        version: (( values.VERSION ))
         input:
           type: ociArtifact
           path: (( values.CHART_URL ))
