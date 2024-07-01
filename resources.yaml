@@ -8,9 +8,8 @@ components:
         type: helmChart
         version: (( values.VERSION ))
         input:
-          type: helm
+          type: ociArtifact
           path: (( values.CHART_URL ))
-          version: (( values.VERSION ))
           repository: charts/(( values.REPO_NAME ))
       - name: image
         type: ociArtifact
