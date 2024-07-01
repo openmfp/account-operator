@@ -12,6 +12,6 @@ jobs:
       imageTagName: ghcr.io/openmfp/account-operator
       useTask: true
       useLocalCoverageConfig: true
-      componentName: ${{ github.server_url }}/${{ github.repository }}
+      componentName: github.com/openmfp/${{ github.repository }}
       release_branch: feat/ocm
 
