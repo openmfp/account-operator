@@ -1,4 +1,4 @@
-package subroutines
+package subroutines_test
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
 
@@ -24,7 +25,7 @@ type NamespaceSubroutineTestSuite struct {
 	suite.Suite
 
 	// Tested Object(s)
-	testObj *NamespaceSubroutine
+	testObj *subroutines.NamespaceSubroutine
 
 	// Mocks
 	clientMock *mocks.Client
@@ -35,7 +36,7 @@ func (suite *NamespaceSubroutineTestSuite) SetupTest() {
 	suite.clientMock = new(mocks.Client)
 
 	// Initialize Tested Object(s)
-	suite.testObj = NewNamespaceSubroutine(suite.clientMock)
+	suite.testObj = subroutines.NewNamespaceSubroutine(suite.clientMock)
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestGetName_OK() {
@@ -43,7 +44,7 @@ func (suite *NamespaceSubroutineTestSuite) TestGetName_OK() {
 	result := suite.testObj.GetName()
 
 	// Then
-	suite.Equal(NamespaceSubroutineName, result)
+	suite.Equal(subroutines.NamespaceSubroutineName, result)
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestFinalize_OK() {
@@ -99,8 +100,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus()
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		NamespaceAccountOwnerLabel:          testAccount.Name,
-		NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
+		subroutines.NamespaceAccountOwnerLabel:          testAccount.Name,
+		subroutines.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
 	})
 
 	// When
@@ -141,7 +142,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		NamespaceAccountOwnerLabel: testAccount.Name,
+		subroutines.NamespaceAccountOwnerLabel: testAccount.Name,
 	})
 	mockNewNamespaceUpdateCall(suite)
 
@@ -164,7 +165,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		NamespaceAccountOwnerLabel: testAccount.Name,
+		subroutines.NamespaceAccountOwnerLabel: testAccount.Name,
 	})
 	suite.clientMock.EXPECT().
 		Update(mock.Anything, mock.Anything).
@@ -228,8 +229,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespace_O
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
-		NamespaceAccountOwnerLabel:          testAccount.Name,
-		NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
+		subroutines.NamespaceAccountOwnerLabel:          testAccount.Name,
+		subroutines.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
 	})
 
 	// When
@@ -310,7 +311,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
-		NamespaceAccountOwnerLabel: "different-owner",
+		subroutines.NamespaceAccountOwnerLabel: "different-owner",
 	})
 
 	// When
@@ -319,6 +320,55 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceMi
 	// Then
 	suite.Require().Nil(testAccount.Status.Namespace)
 	suite.NotNil(err)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallWithName(suite, namespaceName)
+	mockDeleteNamespaceCall(suite)
+
+	result, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().Nil(err)
+	suite.Require().True(result.Requeue)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_DeletionTimestampSet() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallWithNameAndDeletionTimestamp(suite, namespaceName)
+
+	result, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().Nil(err)
+	suite.Require().True(result.Requeue)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_NamespaceGone() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallNotFound(suite)
+
+	result, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().Nil(err)
+	suite.Require().False(result.Requeue)
 }
 
 func TestNamespaceSubroutineTestSuite(t *testing.T) {
@@ -352,6 +402,36 @@ func mockGetNamespaceCallWithLabels(suite *NamespaceSubroutineTestSuite, name st
 			actual.Name = name
 			actual.Labels = labels
 		}).
+		Return(nil)
+}
+
+//nolint:golint,unparam
+func mockGetNamespaceCallWithName(suite *NamespaceSubroutineTestSuite, name string) *mocks.Client_Get_Call {
+	return suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
+			actual, _ := obj.(*v1.Namespace)
+			actual.Name = name
+		}).
+		Return(nil)
+}
+
+//nolint:golint,unparam
+func mockGetNamespaceCallWithNameAndDeletionTimestamp(suite *NamespaceSubroutineTestSuite, name string) *mocks.Client_Get_Call {
+	return suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
+			actual, _ := obj.(*v1.Namespace)
+			actual.Name = name
+			actual.DeletionTimestamp = &metav1.Time{}
+		}).
+		Return(nil)
+}
+
+//nolint:golint,unparam
+func mockDeleteNamespaceCall(suite *NamespaceSubroutineTestSuite) *mocks.Client_Delete_Call {
+	return suite.clientMock.EXPECT().
+		Delete(mock.Anything, mock.Anything).
 		Return(nil)
 }
 
