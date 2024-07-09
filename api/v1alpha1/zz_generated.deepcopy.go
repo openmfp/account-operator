@@ -110,8 +110,8 @@ func (in *AccountSpec) DeepCopyInto(out *AccountSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.AccountMetadata != nil {
-		in, out := &in.AccountMetadata, &out.AccountMetadata
+	if in.Data != nil {
+		in, out := &in.Data, &out.Data
 		*out = new(v1.JSON)
 		(*in).DeepCopyInto(*out)
 	}

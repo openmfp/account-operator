@@ -52,13 +52,13 @@ spec:
           spec:
             description: AccountSpec defines the desired state of Account
             properties:
-              accountMetadata:
-                description: Additional account metadata information that should be
-                  stored with the account
-                x-kubernetes-preserve-unknown-fields: true
               creator:
                 description: The initial creator of this account
                 type: string
+              data:
+                description: Additional account metadata information that should be
+                  stored with the account
+                x-kubernetes-preserve-unknown-fields: true
               description:
                 description: An optional description for this account
                 type: string
