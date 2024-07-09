@@ -51,6 +51,10 @@ func (r *NamespaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
+	if ns.GetDeletionTimestamp() != nil {
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	err = r.client.Delete(ctx, &ns)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)

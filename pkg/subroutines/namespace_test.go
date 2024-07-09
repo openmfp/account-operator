@@ -339,6 +339,22 @@ func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus
 	suite.Require().True(result.Requeue)
 }
 
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_DeletionTimestampSet() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallWithNameAndDeletionTimestamp(suite, namespaceName)
+
+	result, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().Nil(err)
+	suite.Require().True(result.Requeue)
+}
+
 func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_NamespaceGone() {
 	namespaceName := "a-names-space"
 	testAccount := &corev1alpha1.Account{
@@ -396,6 +412,18 @@ func mockGetNamespaceCallWithName(suite *NamespaceSubroutineTestSuite, name stri
 		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
 			actual, _ := obj.(*v1.Namespace)
 			actual.Name = name
+		}).
+		Return(nil)
+}
+
+//nolint:golint,unparam
+func mockGetNamespaceCallWithNameAndDeletionTimestamp(suite *NamespaceSubroutineTestSuite, name string) *mocks.Client_Get_Call {
+	return suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.Anything).
+		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
+			actual, _ := obj.(*v1.Namespace)
+			actual.Name = name
+			actual.DeletionTimestamp = &metav1.Time{}
 		}).
 		Return(nil)
 }
