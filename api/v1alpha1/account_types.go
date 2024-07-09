@@ -50,7 +50,7 @@ type AccountSpec struct {
 	Extensions []Extension `json:"extensions,omitempty"`
 
 	// Additional account metadata information that should be stored with the account
-	AccountMetadata apiextensionsv1.JSON `json:"accountMetadata,omitempty"`
+	AccountMetadata *apiextensionsv1.JSON `json:"accountMetadata,omitempty"`
 }
 
 type Extension struct {
