@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,6 +17,7 @@ import (
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
+	"github.com/openmfp/golang-commons/errors"
 )
 
 const defaultExpectedTestNamespace = "account-test"
@@ -80,7 +81,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingNamespace_NoFinalizer_C
 	testAccount := &corev1alpha1.Account{}
 	suite.clientMock.EXPECT().
 		Create(mock.Anything, mock.Anything).
-		Return(errors.NewBadRequest(""))
+		Return(kerrors.NewBadRequest(""))
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -123,7 +124,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus_L
 	}
 	suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).
-		Return(errors.NewBadRequest(""))
+		Return(kerrors.NewBadRequest(""))
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -169,7 +170,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 	})
 	suite.clientMock.EXPECT().
 		Update(mock.Anything, mock.Anything).
-		Return(errors.NewBadRequest(""))
+		Return(kerrors.NewBadRequest(""))
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -274,7 +275,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceLo
 	}
 	suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).
-		Return(errors.NewBadRequest(""))
+		Return(kerrors.NewBadRequest(""))
 
 	// When
 	_, err := suite.testObj.Process(context.Background(), testAccount)
@@ -337,6 +338,37 @@ func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus
 	result, err := suite.testObj.Finalize(context.Background(), testAccount)
 	suite.Require().Nil(err)
 	suite.Require().True(result.Requeue)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_Error() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallWithError(suite, errors.New("error"))
+
+	_, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().NotNil(err)
+}
+
+func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_DeletionError() {
+	namespaceName := "a-names-space"
+	testAccount := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-account"},
+		Status: corev1alpha1.AccountStatus{
+			Namespace: &namespaceName,
+		},
+	}
+
+	mockGetNamespaceCallWithName(suite, namespaceName)
+	mockDeleteNamespaceCallWithError(suite, errors.New("error"))
+
+	_, err := suite.testObj.Finalize(context.Background(), testAccount)
+	suite.Require().NotNil(err)
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestFinalizationWithNamespaceInStatus_DeletionTimestampSet() {
@@ -435,9 +467,21 @@ func mockDeleteNamespaceCall(suite *NamespaceSubroutineTestSuite) *mocks.Client_
 		Return(nil)
 }
 
+//nolint:golint,unparam
+func mockDeleteNamespaceCallWithError(suite *NamespaceSubroutineTestSuite, err error) *mocks.Client_Delete_Call {
+	return suite.clientMock.EXPECT().
+		Delete(mock.Anything, mock.Anything).
+		Return(err)
+}
+
 func mockGetNamespaceCallNotFound(
 	suite *NamespaceSubroutineTestSuite) *mocks.Client_Get_Call {
 	return suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).
-		Return(errors.NewNotFound(schema.GroupResource{}, ""))
+		Return(kerrors.NewNotFound(schema.GroupResource{}, ""))
+}
+
+func mockGetNamespaceCallWithError(suite *NamespaceSubroutineTestSuite, err error) {
+	suite.clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).
+		Return(err)
 }
