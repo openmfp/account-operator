@@ -56,8 +56,8 @@ spec:
                 description: The initial creator of this account
                 type: string
               data:
-                description: Additional account metadata information that should be
-                  stored with the account
+                description: Additional information that should be stored with the
+                  account
                 x-kubernetes-preserve-unknown-fields: true
               description:
                 description: An optional description for this account
