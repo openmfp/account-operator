@@ -4,6 +4,9 @@ image:
 
 imagePullSecrets: "github"
 
+crds:
+  enabled: true
+
 health:
   port: 8081
 
