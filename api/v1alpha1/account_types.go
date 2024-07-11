@@ -48,6 +48,9 @@ type AccountSpec struct {
 	Creator *string `json:"creator,omitempty"`
 
 	Extensions []Extension `json:"extensions,omitempty"`
+
+	// Additional information that should be stored with the account
+	Data *apiextensionsv1.JSON `json:"data,omitempty"`
 }
 
 type Extension struct {

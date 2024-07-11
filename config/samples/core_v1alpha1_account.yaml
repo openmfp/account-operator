@@ -13,3 +13,7 @@ spec:
     specGoTemplate:
       foo: bar
     readyConditionType: "Ready"
+  data:
+    some:
+      nested:
+        data: "value"
