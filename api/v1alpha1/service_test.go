@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/pointer"
+	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
@@ -32,13 +32,12 @@ func (s *serviceTest) SetupSuite() {
 	s.testEnv = envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "templates")},
 		ErrorIfCRDPathMissing: true,
-		BinaryAssetsDirectory: "../../bin/k8s/1.29.0-darwin-arm64",
 	}
 	cfg, err := s.testEnv.Start()
 
 	s.Require().NoError(err)
 
-	v1alpha1.AddToScheme(scheme.Scheme)
+	s.Require().NoError(v1alpha1.AddToScheme(scheme.Scheme))
 
 	s.testClient, err = client.New(cfg, client.Options{
 		Scheme: scheme.Scheme,
@@ -50,7 +49,7 @@ func (s *serviceTest) SetupSuite() {
 }
 
 func (s *serviceTest) TearDownSuite() {
-	s.testEnv.Stop()
+	s.Require().NoError(s.testEnv.Stop())
 }
 
 func (s *serviceTest) TestGetAccount() {
@@ -176,7 +175,7 @@ func (s *serviceTest) TestGetFirstLevelAccountForAccount() {
 						Type: v1alpha1.AccountTypeFolder,
 					},
 					Status: v1alpha1.AccountStatus{
-						Namespace: pointer.String("sub-namespace"),
+						Namespace: pointer.To("sub-namespace"),
 					},
 				},
 				&corev1.Namespace{
