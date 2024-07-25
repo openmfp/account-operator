@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
+	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 	"github.com/stretchr/testify/assert"
@@ -155,8 +156,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 					*ns = corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								subroutines.NamespaceAccountOwnerLabel:          "first-level",
-								subroutines.NamespaceAccountOwnerNamespaceLabel: "first-level",
+								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
+								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
 							},
 						},
 					}
@@ -225,7 +226,7 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 					*ns = corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								subroutines.NamespaceAccountOwnerLabel: "first-level",
+								corev1alpha1.NamespaceAccountOwnerLabel: "first-level",
 							},
 						},
 					}
@@ -325,8 +326,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 					*ns = corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								subroutines.NamespaceAccountOwnerLabel:          "first-level",
-								subroutines.NamespaceAccountOwnerNamespaceLabel: "first-level",
+								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
+								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
 							},
 						},
 					}
@@ -483,8 +484,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 					*ns = corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								subroutines.NamespaceAccountOwnerLabel:          "first-level",
-								subroutines.NamespaceAccountOwnerNamespaceLabel: "first-level",
+								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
+								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
 							},
 						},
 					}

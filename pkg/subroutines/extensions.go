@@ -166,12 +166,12 @@ func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alph
 		return nil, err
 	}
 
-	accountName, ok := namespace.GetLabels()[NamespaceAccountOwnerLabel]
+	accountName, ok := namespace.GetLabels()[v1alpha1.NamespaceAccountOwnerLabel]
 	if !ok || accountName == "" {
 		return nil, ErrNoParentAvailable
 	}
 
-	accountNamespace, ok := namespace.GetLabels()[NamespaceAccountOwnerNamespaceLabel]
+	accountNamespace, ok := namespace.GetLabels()[v1alpha1.NamespaceAccountOwnerNamespaceLabel]
 	if !ok || accountNamespace == "" {
 		return nil, ErrNoParentAvailable
 	}

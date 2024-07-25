@@ -101,8 +101,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatus()
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		subroutines.NamespaceAccountOwnerLabel:          testAccount.Name,
-		subroutines.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
+		corev1alpha1.NamespaceAccountOwnerLabel:          testAccount.Name,
+		corev1alpha1.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
 	})
 
 	// When
@@ -143,7 +143,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		subroutines.NamespaceAccountOwnerLabel: testAccount.Name,
+		corev1alpha1.NamespaceAccountOwnerLabel: testAccount.Name,
 	})
 	mockNewNamespaceUpdateCall(suite)
 
@@ -166,7 +166,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithNamespaceInStatusMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, defaultExpectedTestNamespace, map[string]string{
-		subroutines.NamespaceAccountOwnerLabel: testAccount.Name,
+		corev1alpha1.NamespaceAccountOwnerLabel: testAccount.Name,
 	})
 	suite.clientMock.EXPECT().
 		Update(mock.Anything, mock.Anything).
@@ -230,8 +230,8 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespace_O
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
-		subroutines.NamespaceAccountOwnerLabel:          testAccount.Name,
-		subroutines.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
+		corev1alpha1.NamespaceAccountOwnerLabel:          testAccount.Name,
+		corev1alpha1.NamespaceAccountOwnerNamespaceLabel: testAccount.Namespace,
 	})
 
 	// When
@@ -312,7 +312,7 @@ func (suite *NamespaceSubroutineTestSuite) TestProcessingWithDeclaredNamespaceMi
 		},
 	}
 	mockGetNamespaceCallWithLabels(suite, namespaceName, map[string]string{
-		subroutines.NamespaceAccountOwnerLabel: "different-owner",
+		corev1alpha1.NamespaceAccountOwnerLabel: "different-owner",
 	})
 
 	// When
