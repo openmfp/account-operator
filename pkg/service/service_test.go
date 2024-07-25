@@ -1,4 +1,4 @@
-package v1alpha1_test
+package service_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/pkg/service"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +77,7 @@ func (s *serviceTest) TestGetAccount() {
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			svc := v1alpha1.NewService(s.testClient, "root-namespace")
+			svc := service.NewService(s.testClient, "root-namespace")
 
 			for _, obj := range test.mockObjects {
 				err := s.testClient.Create(context.Background(), obj)
@@ -135,7 +136,7 @@ func (s *serviceTest) TestGetAccountForNamespace() {
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			svc := v1alpha1.NewService(s.testClient, "root-namespace")
+			svc := service.NewService(s.testClient, "root-namespace")
 
 			for _, obj := range test.mockObjects {
 				err := s.testClient.Create(context.Background(), obj)
@@ -206,7 +207,7 @@ func (s *serviceTest) TestGetFirstLevelAccountForAccount() {
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			svc := v1alpha1.NewService(s.testClient, "root-namespace")
+			svc := service.NewService(s.testClient, "root-namespace")
 
 			for _, obj := range test.mockObjects {
 				err := s.testClient.Create(context.Background(), obj)
