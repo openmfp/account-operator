@@ -135,7 +135,27 @@ func (s *serviceTest) TestGetAccountForNamespace() {
 			},
 		},
 		{
-			name: "return an error due to missing labels",
+			name: "missing namespace",
+			mockObjects: []client.Object{
+				&v1alpha1.Account{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-account",
+						Namespace: "root-namespace",
+					},
+					Spec: v1alpha1.AccountSpec{
+						Type: v1alpha1.AccountTypeAccount,
+					},
+				},
+			},
+			namespace: "account-for-namespace-4",
+			expectedAccount: types.NamespacedName{
+				Namespace: "root-namespace",
+				Name:      "test-account",
+			},
+			expectError: true,
+		},
+		{
+			name: "return an error due to one missing owner-namespace label",
 			mockObjects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -163,7 +183,7 @@ func (s *serviceTest) TestGetAccountForNamespace() {
 			expectError: true,
 		},
 		{
-			name: "return an error due to missing labels",
+			name: "return an error due to missing owner name label",
 			mockObjects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
