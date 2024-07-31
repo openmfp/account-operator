@@ -19,7 +19,7 @@ import (
 func TestAuthorizationModelProcess(t *testing.T) {
 
 	scheme := runtime.NewScheme()
-	corev1alpha1.AddToScheme(scheme)
+	require.NoError(t, corev1alpha1.AddToScheme(scheme))
 
 	tests := []struct {
 		name               string
@@ -79,7 +79,7 @@ func TestAuthorizationModelProcess(t *testing.T) {
 func TestAuthorizationModelFinalize(t *testing.T) {
 
 	scheme := runtime.NewScheme()
-	corev1alpha1.AddToScheme(scheme)
+	require.NoError(t, corev1alpha1.AddToScheme(scheme))
 
 	tests := []struct {
 		name               string

@@ -43,7 +43,7 @@ func TestStoreSubroutineProcess(t *testing.T) {
 func (s *StoreSubroutineSuite) SetupSuite() {
 
 	scheme := runtime.NewScheme()
-	corev1alpha1.AddToScheme(scheme)
+	s.Require().NoError(corev1alpha1.AddToScheme(scheme))
 
 	s.testEnv = envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "templates")},
@@ -66,7 +66,7 @@ func (s *StoreSubroutineSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	go func() {
-		cache.Start(context.Background())
+		s.Require().NoError(cache.Start(context.Background()))
 	}()
 
 	syncCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -110,7 +110,7 @@ func (s *StoreSubroutineSuite) SetupSuite() {
 func (s *StoreSubroutineSuite) TearDownSuite() {
 	s.openfgaServer.Close()
 	s.grpcServer.Stop()
-	s.testEnv.Stop()
+	s.testEnv.Stop() //nolint:errcheck
 }
 
 func (s *StoreSubroutineSuite) TestStoreSubroutineProcess() {
