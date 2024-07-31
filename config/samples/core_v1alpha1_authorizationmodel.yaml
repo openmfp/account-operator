@@ -1,0 +1,86 @@
+apiVersion: core.openmfp.io/v1alpha1
+kind: AuthorizationModel
+metadata:
+  name: model-sample
+spec:
+  storeRef:
+    name: sap
+  model: |
+    module hycom
+
+    extend type project
+      relations
+        define hycom_read: member
+        define hycom_write: owner
+
+---
+apiVersion: core.openmfp.io/v1alpha1
+kind: AuthorizationModel
+metadata:
+  name: core
+spec:
+  storeRef:
+    name: sap
+  model: |
+    module core
+
+    type user
+
+    type role
+      relations
+        define assignee: [user]
+
+    type tenant
+      relations
+        # Model Permissions
+        define project_parent_tenant: [user, role#assignee]
+        define team_parent_tenant: [user, role#assignee]
+        define project_owner_role: [user, role#assignee]
+        define team_owner_role: [user, role#assignee]
+        define role_assignee_user: [user, role#assignee]
+        define project_member_role: [user, role#assignee]
+        define team_member_role: [user, role#assignee]
+        define project_vault_maintainer_role: [user, role#assignee]
+        define team_vault_maintainer_role: [user, role#assignee]
+
+        # Roles
+        define member: [role#assignee]
+        define external_member: [role#assignee]
+        
+        # Permissions
+        define project_create: member
+        define team_create: member
+
+    type project
+      relations
+        # Relations
+        define parent: [tenant]
+
+        # Roles
+        define owner: [role#assignee]
+        define member: [role#assignee] or owner
+        define vault_maintainer: [role#assignee] or owner
+
+        # Permissions
+        define view: member or member from parent or external_member from parent
+        define write: member
+        define delete: owner
+        
+        define member_manage: owner or project_owner_role from parent or project_member_role from parent
+
+    type team
+      relations
+        # Relations
+        define parent: [tenant]
+        
+        # Roles
+        define owner: [role#assignee]
+        define member: [role#assignee] or owner
+        define vault_maintainer: [role#assignee] or owner
+
+        # Permissions
+        define view: member or member from parent or external_member from parent
+        define write: member
+        define delete: owner
+        
+        define member_manage: owner or team_owner_role from parent or team_member_role from parent

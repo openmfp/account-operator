@@ -13,6 +13,10 @@ health:
 metrics:
   port: 8080
 
+controllers:
+  openfga:
+    enabled: false
+
 deployment:
   revisionHistoryLimit: 3
   resources:

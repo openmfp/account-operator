@@ -27,6 +27,9 @@ spec:
           name: manager
           securityContext:
             runAsNonRoot: true
+          env:
+            - name: CONTROLLERS_OPENFGA_ENABLED
+              value: "{{ ((.Values.controllers).openfga).enabled }}"
           ports:
           - containerPort: {{ .Values.metrics.port }}
             name: metrics
