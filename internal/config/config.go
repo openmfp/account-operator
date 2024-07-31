@@ -25,6 +25,11 @@ type Config struct {
 	LeaderElection struct {
 		Enabled bool `envconfig:"default=false"`
 	}
+	Controllers struct {
+		OpenFGA struct {
+			Enabled bool `envconfig:"default=false"`
+		}
+	}
 	Subroutines struct {
 		Namespace struct {
 			Enabled bool `envconfig:"default=true"`
@@ -34,6 +39,9 @@ type Config struct {
 		}
 		ExtensionReady struct {
 			Enabled bool `envconfig:"default=true"`
+		}
+		Store struct {
+			OpenFGAURL string `envconfig:"default=openfga:8081"`
 		}
 	}
 	MaxConcurrentReconciles int `envconfig:"default=10"`

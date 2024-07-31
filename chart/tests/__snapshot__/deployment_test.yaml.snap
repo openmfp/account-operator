@@ -9,6 +9,8 @@ operator match the snapshot:
           - core.openmfp.io
         resources:
           - accounts
+          - stores
+          - authorizationmodels
         verbs:
           - create
           - delete
@@ -32,8 +34,9 @@ operator match the snapshot:
       - apiGroups:
           - core.openmfp.io
         resources:
-          - accounts
           - accounts/status
+          - stores/status
+          - authorizationmodels/status
         verbs:
           - create
           - delete
@@ -93,6 +96,9 @@ operator match the snapshot:
                 - --leader-elect
                 - --log-level=
                 - --health-probe-bind-address=:8081
+              env:
+                - name: CONTROLLERS_OPENFGA_ENABLED
+                  value: "false"
               image: ghcr.io/openmfp/account-operator:latest
               livenessProbe:
                 httpGet:

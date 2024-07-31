@@ -17,4 +17,22 @@ resources:
   kind: Account
   path: github.com/openmfp/account-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openmfp.io
+  group: core
+  kind: Store
+  path: github.com/openmfp/account-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openmfp.io
+  group: core
+  kind: AuthorizationModel
+  path: github.com/openmfp/account-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"
