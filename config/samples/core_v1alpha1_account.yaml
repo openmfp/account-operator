@@ -6,7 +6,7 @@ metadata:
 spec:
   type: folder
   displayName: New Demo Account
-  creator: bastian.echterhoelter@sap.com
+  creator: test.user@example.com
   extensions:
   - apiVersion: core.openmfp.io/v1alpha1
     kind: AccountExtension
