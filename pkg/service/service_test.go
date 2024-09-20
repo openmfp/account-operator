@@ -31,7 +31,7 @@ func TestService(t *testing.T) {
 func (s *serviceTest) SetupSuite() {
 
 	s.testEnv = envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "templates")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "crds")},
 		ErrorIfCRDPathMissing: true,
 	}
 	cfg, err := s.testEnv.Start()
