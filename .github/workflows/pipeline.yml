@@ -12,4 +12,3 @@ jobs:
       imageTagName: ghcr.io/openmfp/account-operator
       useTask: true
       useLocalCoverageConfig: true
-      publishCRDChart: true
