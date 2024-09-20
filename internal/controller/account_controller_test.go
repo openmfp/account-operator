@@ -18,13 +18,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
-	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/pkg/subroutines"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	networkv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/internal/config"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 )
 
 const (
@@ -61,7 +62,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	testContext = logger.SetLoggerInContext(testContext, log.ComponentLogger("TestSuite"))
 
 	suite.testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "templates")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "crds")},
 		ErrorIfCRDPathMissing: true,
 	}
 
