@@ -273,14 +273,14 @@ func (suite *AccountTestSuite) verifyNamespace(
 	err := suite.kubernetesClient.Get(ctx, types.NamespacedName{Name: *nsName}, ns)
 	suite.Nil(err)
 
-	suite.Assert().Contains(ns.GetLabels(), subroutines.NamespaceAccountOwnerLabel,
+	suite.Assert().Contains(ns.GetLabels(), corev1alpha1.NamespaceAccountOwnerLabel,
 		"failed to verify account label on namespace")
-	suite.Assert().Contains(ns.GetLabels(), subroutines.NamespaceAccountOwnerNamespaceLabel,
+	suite.Assert().Contains(ns.GetLabels(), corev1alpha1.NamespaceAccountOwnerNamespaceLabel,
 		"failed to verify account namespace label on namespace")
 
-	suite.Assert().Equal(ns.GetLabels()[subroutines.NamespaceAccountOwnerLabel], accName,
+	suite.Assert().Equal(ns.GetLabels()[corev1alpha1.NamespaceAccountOwnerLabel], accName,
 		"failed to verify account label on namespace")
-	suite.Assert().Contains(ns.GetLabels()[subroutines.NamespaceAccountOwnerNamespaceLabel], accNamespace,
+	suite.Assert().Contains(ns.GetLabels()[corev1alpha1.NamespaceAccountOwnerNamespaceLabel], accNamespace,
 		"failed to verify account namespace label on namespace")
 }
 

@@ -16,11 +16,9 @@ import (
 )
 
 const (
-	NamespaceSubroutineName             = "NamespaceSubroutine"
-	NamespaceSubroutineFinalizer        = "account.core.openmfp.io/finalizer"
-	NamespaceAccountOwnerLabel          = "account.core.openmfp.io/owner"
-	NamespaceAccountOwnerNamespaceLabel = "account.core.openmfp.io/owner-namespace"
-	NamespaceNamePrefix                 = "account-"
+	NamespaceSubroutineName      = "NamespaceSubroutine"
+	NamespaceSubroutineFinalizer = "account.core.openmfp.io/finalizer"
+	NamespaceNamePrefix          = "account-"
 )
 
 type NamespaceSubroutine struct {
@@ -107,8 +105,8 @@ var NamespaceOwnedByAnotherAccountErr = errors.New("Namespace already owned by a
 var NamespaceOwnedByAnAccountInAnotherNamespaceErr = errors.New("Namespace already owned by another account in another namespace")
 
 func setNamespaceLabels(ns *v1.Namespace, instance *corev1alpha1.Account) error {
-	accountOwner, hasOwnerLabel := ns.Labels[NamespaceAccountOwnerLabel]
-	accountOwnerNamespace, hasOwnerNamespaceLabel := ns.Labels[NamespaceAccountOwnerNamespaceLabel]
+	accountOwner, hasOwnerLabel := ns.Labels[corev1alpha1.NamespaceAccountOwnerLabel]
+	accountOwnerNamespace, hasOwnerNamespaceLabel := ns.Labels[corev1alpha1.NamespaceAccountOwnerNamespaceLabel]
 
 	if hasOwnerLabel && accountOwner != instance.GetName() {
 		return NamespaceOwnedByAnotherAccountErr
@@ -122,8 +120,8 @@ func setNamespaceLabels(ns *v1.Namespace, instance *corev1alpha1.Account) error 
 		if ns.Labels == nil {
 			ns.Labels = make(map[string]string)
 		}
-		ns.Labels[NamespaceAccountOwnerLabel] = instance.GetName()
-		ns.Labels[NamespaceAccountOwnerNamespaceLabel] = instance.GetNamespace()
+		ns.Labels[corev1alpha1.NamespaceAccountOwnerLabel] = instance.GetName()
+		ns.Labels[corev1alpha1.NamespaceAccountOwnerNamespaceLabel] = instance.GetNamespace()
 	}
 
 	return nil
@@ -133,8 +131,8 @@ func generateNamespace(instance *corev1alpha1.Account) *v1.Namespace {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				NamespaceAccountOwnerLabel:          instance.GetName(),
-				NamespaceAccountOwnerNamespaceLabel: instance.GetNamespace(),
+				corev1alpha1.NamespaceAccountOwnerLabel:          instance.GetName(),
+				corev1alpha1.NamespaceAccountOwnerNamespaceLabel: instance.GetNamespace(),
 			},
 		},
 	}

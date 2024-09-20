@@ -24,8 +24,10 @@ import (
 type AccountType string
 
 const (
-	AccountTypeFolder  AccountType = "folder"
-	AccountTypeAccount AccountType = "account"
+	AccountTypeFolder                   AccountType = "folder"
+	AccountTypeAccount                  AccountType = "account"
+	NamespaceAccountOwnerLabel                      = "account.core.openmfp.io/owner"
+	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.io/owner-namespace"
 )
 
 // AccountSpec defines the desired state of Account
