@@ -119,6 +119,21 @@ func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
 	}
 
+	if cfg.Controllers.OpenFGA.Enabled {
+		storeReconciler, err := controller.NewStoreReconciler(mgr, log, cfg)
+		if err != nil {
+			log.Fatal().Err(err).Str("controller", "Store").Msg("unable to create controller")
+		}
+		if err := storeReconciler.SetupWithManager(mgr); err != nil {
+			log.Fatal().Err(err).Str("controller", "Store").Msg("unable to set up controller")
+		}
+
+		authorizationModelReconciler := controller.NewAuthorizationModelReconciler(mgr, log)
+		if err := authorizationModelReconciler.SetupWithManager(mgr); err != nil {
+			log.Fatal().Err(err).Str("controller", "AuthorizationModel").Msg("unable to set up controller")
+		}
+	}
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Fatal().Err(err).Msg("unable to set up health check")
 	}
