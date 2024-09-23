@@ -24,6 +24,9 @@ spec:
           - --log-level={{ .Values.logLevel }}
           - "--health-probe-bind-address=:{{ .Values.health.port }}"
           image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+          env:
+            - name: SUBROUTINES_CREATOR_FGA_GRPC_ADDR
+              value: {{ .Values.fga.grpcAddr }}
           name: manager
           securityContext:
             runAsNonRoot: true

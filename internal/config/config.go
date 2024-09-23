@@ -29,6 +29,11 @@ type Config struct {
 		Namespace struct {
 			Enabled bool `envconfig:"default=true"`
 		}
+		Creator struct {
+			Enabled       bool   `envconfig:"default=true"`
+			RootNamespace string `envconfig:"default=openmfp-system"`
+			FgaGrpcAddr   string `required:"true"`
+		}
 		Extension struct {
 			Enabled bool `envconfig:"default=true"`
 		}

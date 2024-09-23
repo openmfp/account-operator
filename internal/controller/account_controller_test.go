@@ -7,9 +7,13 @@ import (
 	"testing"
 	"time"
 
+	openmfpcontext "github.com/openmfp/golang-commons/context"
+	"github.com/openmfp/golang-commons/logger"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
+	networkv1 "k8s.io/api/networking/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -17,11 +21,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-
-	openmfpcontext "github.com/openmfp/golang-commons/context"
-	"github.com/openmfp/golang-commons/logger"
-	networkv1 "k8s.io/api/networking/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -54,6 +53,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	log, err := logger.New(logConfig)
 	suite.Require().NoError(err)
 
+	os.Setenv("SUBROUTINES_CREATOR_FGA_GRPC_ADDR", "0.0.0.0")
 	cfg, err := config.NewFromEnv()
 	suite.Require().NoError(err)
 

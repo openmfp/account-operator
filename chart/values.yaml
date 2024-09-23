@@ -13,6 +13,9 @@ health:
 metrics:
   port: 8080
 
+fga:
+  grpcAddr: "grpc://0.0.0.0"
+
 deployment:
   revisionHistoryLimit: 3
   resources:
