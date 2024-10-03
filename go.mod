@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/openmfp/golang-commons v0.66.0
+	github.com/openmfp/golang-commons v0.68.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
