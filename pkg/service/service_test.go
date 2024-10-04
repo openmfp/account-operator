@@ -6,8 +6,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/pkg/service"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +14,9 @@ import (
 	pointer "k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/pkg/service"
 )
 
 type serviceTest struct {
@@ -31,7 +32,7 @@ func TestService(t *testing.T) {
 func (s *serviceTest) SetupSuite() {
 
 	s.testEnv = envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "crds")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 	cfg, err := s.testEnv.Start()
