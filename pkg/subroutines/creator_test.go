@@ -44,7 +44,7 @@ func TestCreatorSubroutine_Finalizers(t *testing.T) {
 }
 
 func TestCreatorSubroutine_Process(t *testing.T) {
-	namespace := "openmfp-system"
+	namespace := "test-openmfp-namespace"
 	creator := "test-creator"
 
 	tests := []struct {
@@ -64,7 +64,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -86,10 +86,10 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant1",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -111,7 +111,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -133,10 +133,10 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant9",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -162,7 +162,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -184,10 +184,10 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant2",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -207,7 +207,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tenant3",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Status: v1alpha1.AccountStatus{
 					Namespace: &namespace,
@@ -221,7 +221,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tenant",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -249,7 +249,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -271,10 +271,10 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant7",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -295,7 +295,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -317,7 +317,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(nil, assert.AnError)
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(nil, assert.AnError)
 			},
 		},
 	}
@@ -336,7 +336,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				test.setupMocks(test.ctx, test.in, out, openFGAServiceClientMock, k8ServiceMock)
 			}
 
-			routine := subroutines.NewCreatorSubroutine(openFGAServiceClientMock, k8ServiceMock, "openmfp-system")
+			routine := subroutines.NewCreatorSubroutine(openFGAServiceClientMock, k8ServiceMock, namespace)
 			_, err := routine.Process(test.ctx, &test.account)
 			if test.expectError != nil {
 				assert.NotNil(t, err)
@@ -350,7 +350,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 }
 
 func TestCreatorSubroutine_Finalize(t *testing.T) {
-	namespace := "openmfp-system"
+	namespace := "test-openmfp-namespace"
 	creator := "test-creator"
 
 	tests := []struct {
@@ -370,7 +370,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -392,10 +392,10 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant4",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -417,7 +417,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Status: v1alpha1.AccountStatus{
 					Namespace: &namespace,
@@ -447,7 +447,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -469,10 +469,10 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant5",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -490,6 +490,54 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			},
 		},
 		{
+			name:        "handle_write_error_with_non_existing_entry",
+			expectError: nil,
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: namespace,
+				},
+				Spec: v1alpha1.AccountSpec{
+					Creator: &creator,
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			in: &openfgav1.WriteRequest{
+				StoreId: "5",
+				Deletes: &openfgav1.WriteRequestDeletes{
+					TupleKeys: []*openfgav1.TupleKeyWithoutCondition{
+						{
+							Object:   "account:test-account",
+							Relation: "owner",
+							User:     "user:test-creator",
+						},
+					},
+				},
+			},
+			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tenant5",
+						Namespace: namespace,
+					},
+					Spec: v1alpha1.AccountSpec{
+						Creator: &creator,
+					},
+					Status: v1alpha1.AccountStatus{
+						Namespace: &namespace,
+					},
+				}, nil)
+				openFGAServiceClientMock.EXPECT().ListStores(ctx, mock.Anything).Return(&openfgav1.ListStoresResponse{
+					Stores: []*openfgav1.Store{{Id: "5", Name: "tenant-tenant5"}},
+				}, nil).Once()
+				openFGAServiceClientMock.EXPECT().Write(ctx, in).
+					Return(nil, newFgaError(openfgav1.ErrorCode_write_failed_due_to_invalid_input, "error")).
+					Once()
+			},
+		},
+		{
 			expectError: &struct {
 				Retry  bool
 				Sentry bool
@@ -498,7 +546,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -520,7 +568,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(nil, assert.AnError)
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(nil, assert.AnError)
 			},
 		},
 		{
@@ -532,7 +580,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
-					Namespace: "openmfp-system",
+					Namespace: namespace,
 				},
 				Spec: v1alpha1.AccountSpec{
 					Creator: &creator,
@@ -554,10 +602,10 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(ctx context.Context, in *openfgav1.WriteRequest, out *openfgav1.WriteResponse, openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
-				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, "openmfp-system").Return(&v1alpha1.Account{
+				k8ServiceMock.EXPECT().GetFirstLevelAccountForNamespace(ctx, namespace).Return(&v1alpha1.Account{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tenant8",
-						Namespace: "openmfp-system",
+						Namespace: namespace,
 					},
 					Spec: v1alpha1.AccountSpec{
 						Creator: &creator,
@@ -573,7 +621,6 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			openFGAServiceClientMock := &mocks.OpenFGAServiceClient{}
 			k8ServiceMock := mocks.NewK8Service(t)
 			if test.setupMocks != nil {
@@ -584,7 +631,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				test.setupMocks(test.ctx, test.in, out, openFGAServiceClientMock, k8ServiceMock)
 			}
 
-			routine := subroutines.NewCreatorSubroutine(openFGAServiceClientMock, k8ServiceMock, "openmfp-system")
+			routine := subroutines.NewCreatorSubroutine(openFGAServiceClientMock, k8ServiceMock, namespace)
 			_, err := routine.Finalize(test.ctx, &test.account)
 			if test.expectError != nil {
 				assert.NotNil(t, err)

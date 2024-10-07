@@ -36,7 +36,7 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 		return ctrl.Result{}, nil
 	}
 
-	storeId, err := e.storeId(ctx)
+	storeId, err := e.getStoreId(ctx)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -55,6 +55,7 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 	})
 
 	if helpers.IsDuplicateWriteError(err) {
+		logInfo(ctx, "Open FGA write failed due to invalid input (possible duplicate)", err)
 		err = nil
 	}
 
@@ -72,7 +73,7 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 		return ctrl.Result{}, nil
 	}
 
-	storeId, err := e.storeId(ctx)
+	storeId, err := e.getStoreId(ctx)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -90,6 +91,11 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 		},
 	})
 
+	if helpers.IsDuplicateWriteError(err) {
+		logInfo(ctx, "Open FGA write failed due to invalid input (possibly trying to delete nonexisting entry)", err)
+		err = nil
+	}
+
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -97,7 +103,7 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 	return ctrl.Result{}, nil
 }
 
-func (e *CreatorSubroutine) storeId(ctx context.Context) (string, error) {
+func (e *CreatorSubroutine) getStoreId(ctx context.Context) (string, error) {
 	a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, e.rootNamespace)
 	if err != nil {
 		return "", err

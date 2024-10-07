@@ -53,7 +53,6 @@ func (suite *AccountTestSuite) SetupSuite() {
 	log, err := logger.New(logConfig)
 	suite.Require().NoError(err)
 
-	os.Setenv("SUBROUTINES_CREATOR_FGA_GRPC_ADDR", "0.0.0.0")
 	cfg, err := config.NewFromEnv()
 	suite.Require().NoError(err)
 
