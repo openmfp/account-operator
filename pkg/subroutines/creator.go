@@ -30,20 +30,23 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 	account := runtimeObj.(*v1alpha1.Account)
 
 	log := logger.LoadLoggerFromContext(ctx)
-	log.Info().Msg("Starting creator sub rountine process()")
+	log.Debug().Msg("Starting creator subroutine process() function")
 
 	if account.Spec.Creator == nil {
+		log.Debug().Msgf("Missing Creator for account (UID): %s", account.UID)
 		return ctrl.Result{}, nil
 	}
 
 	for _, condition := range account.Status.Conditions {
 		if condition.Type == "CreatorSubroutine_OwnerWritten" && condition.Status == "True" {
+			log.Debug().Msgf("Owner has already been written for account (UID): %s", account.UID)
 			return ctrl.Result{}, nil
 		}
 	}
 
 	storeId, err := e.getStoreId(ctx, account)
 	if err != nil {
+		log.Error().Err(err).Msg("Couldn't get Store Id")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
@@ -66,6 +69,7 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 	}
 
 	if err != nil {
+		log.Error().Err(err).Msg("Open FGA write failed")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
@@ -76,18 +80,23 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 		Message: "Creator written as owner",
 	})
 
+	log.Debug().Msg("Owner saved! Success.")
+
 	return ctrl.Result{}, nil
 }
 
 func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := runtimeObj.(*v1alpha1.Account)
+	log := logger.LoadLoggerFromContext(ctx)
 
 	if account.Spec.Creator == nil {
+		log.Debug().Msgf("Missing Creator for account (UID): %s", account.UID)
 		return ctrl.Result{}, nil
 	}
 
 	storeId, err := e.getStoreId(ctx, account)
 	if err != nil {
+		log.Error().Err(err).Msg("Couldn't get Store Id")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
@@ -105,12 +114,12 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 	})
 
 	if helpers.IsDuplicateWriteError(err) {
-		log := logger.LoadLoggerFromContext(ctx)
 		log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possibly trying to delete nonexisting entry)")
 		err = nil
 	}
 
 	if err != nil {
+		log.Error().Err(err).Msg("Open FGA write failed")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
