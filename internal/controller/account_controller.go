@@ -19,14 +19,19 @@ package controller
 import (
 	"context"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+	"github.com/openmfp/golang-commons/controller/lifecycle"
+	"github.com/openmfp/golang-commons/logger"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
+	"github.com/openmfp/account-operator/pkg/service"
 	"github.com/openmfp/account-operator/pkg/subroutines"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/logger"
 )
 
 var (
@@ -49,6 +54,23 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	}
 	if cfg.Subroutines.ExtensionReady.Enabled {
 		subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
+	}
+	if cfg.Subroutines.Creator.Enabled {
+		conn, err := grpc.NewClient(cfg.Subroutines.Creator.FgaGrpcAddr,
+			grpc.EmptyDialOption{},
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		)
+
+		if err != nil {
+			log.Fatal().Err(err).Msg("error when creating the grpc client")
+		}
+
+		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.Creator.RootNamespace)
+
+		cl := openfgav1.NewOpenFGAServiceClient(conn)
+
+		subs = append(subs, subroutines.NewCreatorSubroutine(cl, srv, cfg.Subroutines.Creator.RootNamespace))
 	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),

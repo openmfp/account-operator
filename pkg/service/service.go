@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/openmfp/account-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
 type Service interface {
