@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
+	"github.com/openmfp/golang-commons/context/keys"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/codes"
@@ -230,9 +232,9 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 					Namespace: &namespace,
 					Conditions: []metav1.Condition{
 						{
-							Type:    "CreatorSubroutine_Ready",
+							Type:    "CreatorSubroutine_OwnerWritten",
 							Status:  metav1.ConditionTrue,
-							Message: "CreatorSubroutine_Ready",
+							Message: "CreatorSubroutine_OwnerWritten",
 						},
 					},
 				},
@@ -324,6 +326,10 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
+			if test.ctx == nil {
+				test.ctx = context.WithValue(context.TODO(), keys.LoggerCtxKey, zerolog.Logger{})
+			}
 
 			// setup mocks
 			openFGAServiceClientMock := mocks.NewOpenFGAServiceClient(t)
@@ -620,6 +626,11 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 	}
 
 	for _, test := range tests {
+
+		if test.ctx == nil {
+			test.ctx = context.WithValue(context.TODO(), keys.LoggerCtxKey, zerolog.Logger{})
+		}
+
 		t.Run(test.name, func(t *testing.T) {
 			openFGAServiceClientMock := &mocks.OpenFGAServiceClient{}
 			k8ServiceMock := mocks.NewK8Service(t)
