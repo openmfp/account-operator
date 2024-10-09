@@ -61,7 +61,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	testContext = logger.SetLoggerInContext(testContext, log.ComponentLogger("TestSuite"))
 
 	suite.testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "chart", "charts", "crds", "crds")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 

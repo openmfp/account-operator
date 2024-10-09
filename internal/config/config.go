@@ -31,8 +31,8 @@ type Config struct {
 		}
 		Creator struct {
 			Enabled       bool   `envconfig:"default=true"`
-			RootNamespace string `envconfig:"default=openmfp-system"`
-			FgaGrpcAddr   string `envconfig:"default=openfga.openmfp-system.svc.cluster.local:8081"`
+			RootNamespace string `envconfig:"default=openmfp-root"`
+			FgaGrpcAddr   string `envconfig:"default=localhost:8081"`
 		}
 		Extension struct {
 			Enabled bool `envconfig:"default=true"`

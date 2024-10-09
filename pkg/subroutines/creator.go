@@ -8,7 +8,8 @@ import (
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
 	"github.com/openmfp/golang-commons/fga/helpers"
-	"k8s.io/apimachinery/pkg/api/meta"
+	"github.com/openmfp/golang-commons/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	v1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
@@ -28,15 +29,20 @@ func NewCreatorSubroutine(cl openfgav1.OpenFGAServiceClient, s service.Service, 
 func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := runtimeObj.(*v1alpha1.Account)
 
+	log := logger.LoadLoggerFromContext(ctx)
+	log.Info().Msg("Starting creator sub rountine process()")
+
 	if account.Spec.Creator == nil {
 		return ctrl.Result{}, nil
 	}
 
-	if meta.IsStatusConditionTrue(account.Status.Conditions, "CreatorSubroutine_Ready") {
-		return ctrl.Result{}, nil
+	for _, condition := range account.Status.Conditions {
+		if condition.Type == "CreatorSubroutine_OwnerWritten" && condition.Status == "True" {
+			return ctrl.Result{}, nil
+		}
 	}
 
-	storeId, err := e.getStoreId(ctx)
+	storeId, err := e.getStoreId(ctx, account)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -55,13 +61,20 @@ func (e *CreatorSubroutine) Process(ctx context.Context, runtimeObj lifecycle.Ru
 	})
 
 	if helpers.IsDuplicateWriteError(err) {
-		logInfo(ctx, "Open FGA write failed due to invalid input (possible duplicate)", err)
+		log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possible duplicate)")
 		err = nil
 	}
 
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
+
+	account.Status.Conditions = append(account.Status.Conditions, metav1.Condition{
+		Type:    "CreatorSubroutine_OwnerWritten",
+		Status:  "True",
+		Reason:  "OwnerWritten",
+		Message: "Creator written as owner",
+	})
 
 	return ctrl.Result{}, nil
 }
@@ -73,7 +86,7 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 		return ctrl.Result{}, nil
 	}
 
-	storeId, err := e.getStoreId(ctx)
+	storeId, err := e.getStoreId(ctx, account)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -92,7 +105,8 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 	})
 
 	if helpers.IsDuplicateWriteError(err) {
-		logInfo(ctx, "Open FGA write failed due to invalid input (possibly trying to delete nonexisting entry)", err)
+		log := logger.LoadLoggerFromContext(ctx)
+		log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possibly trying to delete nonexisting entry)")
 		err = nil
 	}
 
@@ -103,8 +117,8 @@ func (e *CreatorSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.R
 	return ctrl.Result{}, nil
 }
 
-func (e *CreatorSubroutine) getStoreId(ctx context.Context) (string, error) {
-	a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, e.rootNamespace)
+func (e *CreatorSubroutine) getStoreId(ctx context.Context, account *v1alpha1.Account) (string, error) {
+	a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, account.Namespace)
 	if err != nil {
 		return "", err
 	}
