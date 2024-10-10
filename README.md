@@ -19,7 +19,26 @@ The openMFP account-operator manages the core Account resource which is a groupi
 
 ## Getting started
 
-TBD
+First you need to start your local kind cluster, following the [getting started guide](https://github.com/openmfp/openmfp.org/tree/main/docs/getting-started)
+Then you can export the kubeconfig of the kind cluster.
+Execute the following command in the root of this repository:
+
+```shell
+kind export kubeconfig --name openmfp --kubeconfig .secret/.kube
+```
+
+Copy the .env.example file to .env and adjust the values to your needs.
+    
+```shell
+cp .env-example .env
+```
+
+Then you can run the operator locally:
+
+```shell
+go run main.go
+```
+
 
 ## Releasing
 
