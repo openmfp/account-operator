@@ -1,0 +1,18 @@
+apiVersion: core.openmfp.io/v1alpha1
+kind: Account
+metadata:
+  name: new-account-debug1
+  namespace: default
+spec:
+  type: folder
+  displayName: New Demo Account
+  creator: test.user@example.com
+  extensions:
+  - apiVersion: v1
+    kind: ConfigMap
+    specGoTemplate:
+      foo: bar
+  data:
+    some:
+      nested:
+        data: "value"
