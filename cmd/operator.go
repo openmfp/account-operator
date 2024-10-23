@@ -21,6 +21,8 @@ import (
 	"crypto/tls"
 	"os"
 
+	openmfpcontext "github.com/openmfp/golang-commons/context"
+	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,8 +32,6 @@ import (
 
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
-	openmfpcontext "github.com/openmfp/golang-commons/context"
-	"github.com/openmfp/golang-commons/logger"
 )
 
 var operatorCmd = &cobra.Command{
