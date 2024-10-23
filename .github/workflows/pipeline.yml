@@ -12,3 +12,4 @@ jobs:
       imageTagName: ghcr.io/openmfp/account-operator
       useTask: true
       useLocalCoverageConfig: true
+      repoVersionUpdate: openmfp/helm-charts
