@@ -76,7 +76,7 @@ func init() { // coverage-ignore
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 }
 
-func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
+func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	log := initLog()
 	ctrl.SetLogger(log.ComponentLogger("controller-runtime").Logr())
 
