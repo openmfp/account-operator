@@ -27,6 +27,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -75,7 +76,7 @@ func init() { // coverage-ignore
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 }
 
-func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
+func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	log := initLog()
 	ctrl.SetLogger(log.ComponentLogger("controller-runtime").Logr())
 
@@ -96,7 +97,7 @@ func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
 		TLSOpts: tlsOpts,
 	})
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	opts := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress:   metricsAddr,
@@ -109,7 +110,14 @@ func RunController(cmd *cobra.Command, args []string) { // coverage-ignore
 		LeaderElection:                enableLeaderElection,
 		LeaderElectionID:              "8c290d9a.openmfp.io",
 		LeaderElectionReleaseOnCancel: true,
-	})
+	}
+	var mgr ctrl.Manager
+	var err error
+	if cfg.KcpEnabled {
+		mgr, err = kcp.NewClusterAwareManager(ctrl.GetConfigOrDie(), opts)
+	} else {
+		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+	}
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to start manager")
 	}

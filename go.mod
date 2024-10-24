@@ -2,6 +2,8 @@ module github.com/openmfp/account-operator
 
 go 1.22.5
 
+replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime v0.19.0-kcp.1
+
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/openfga/api/proto v0.0.0-20240919222301-339f6b8ff0f0
@@ -55,6 +57,8 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0.0.20230926071920-57d168bcbe34 // indirect
+	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -72,7 +76,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.17 // indirect
 	github.com/x448/float16 v0.8.4 // indirect

@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
@@ -82,5 +83,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config, log *logger.Logger, eventPredicates ...predicate.Predicate) error {
-	return r.lifecycle.SetupWithManager(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, r, log, eventPredicates...)
+	builder, err := r.lifecycle.SetupWithManagerBuilder(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, log, eventPredicates...)
+	if err != nil {
+		return err
+	}
+	if cfg.KcpEnabled {
+		return builder.Complete(kcp.WithClusterInContext(r))
+	}
+	return builder.Complete(r)
 }
