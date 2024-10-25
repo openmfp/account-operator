@@ -87,7 +87,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config
 	if err != nil {
 		return err
 	}
-	if cfg.KcpEnabled {
+	if cfg.Kcp.Enabled {
 		return builder.Complete(kcp.WithClusterInContext(r))
 	}
 	return builder.Complete(r)
