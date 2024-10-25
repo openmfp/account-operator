@@ -1,2 +1,4 @@
 # Default code owners
-* @openmfp/frame @app/renovate-approve
+* @openmfp/frame
+go.mod
+go.sum
