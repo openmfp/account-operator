@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	v1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
 	v1 "k8s.io/api/core/v1"
@@ -18,6 +17,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
 type ExtensionSubroutine struct {

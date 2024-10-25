@@ -12,17 +12,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	v1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/pkg/service"
 )
 
 type CreatorSubroutine struct {
 	client        openfgav1.OpenFGAServiceClient
-	srv           service.Service
+	srv           service.Servicer
 	rootNamespace string
 }
 
-func NewCreatorSubroutine(cl openfgav1.OpenFGAServiceClient, s service.Service, rootNamespace string) *CreatorSubroutine {
+func NewCreatorSubroutine(cl openfgav1.OpenFGAServiceClient, s service.Servicer, rootNamespace string) *CreatorSubroutine {
 	return &CreatorSubroutine{client: cl, srv: s, rootNamespace: rootNamespace}
 }
 

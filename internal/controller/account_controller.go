@@ -46,7 +46,7 @@ type AccountReconciler struct {
 }
 
 func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
-	subs := []lifecycle.Subroutine{}
+	var subs []lifecycle.Subroutine
 	if cfg.Subroutines.Namespace.Enabled {
 		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
 	}

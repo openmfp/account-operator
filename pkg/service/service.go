@@ -10,7 +10,7 @@ import (
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
-type Service interface {
+type Servicer interface {
 	GetFirstLevelAccountForAccount(ctx context.Context, accountKey client.ObjectKey) (*v1alpha1.Account, error)
 	GetFirstLevelAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error)
 
@@ -18,21 +18,21 @@ type Service interface {
 	GetAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error)
 }
 
-var _ Service = (*service)(nil)
+var _ Servicer = (*Service)(nil)
 
-type service struct {
+type Service struct {
 	client        client.Client
 	rootNamespace string
 }
 
-func NewService(client client.Client, rootNamespace string) *service {
-	return &service{
+func NewService(client client.Client, rootNamespace string) *Service {
+	return &Service{
 		client:        client,
 		rootNamespace: rootNamespace,
 	}
 }
 
-func (s *service) getAccountOwnerAndNamespaceForNamespace(ctx context.Context, namespace string) (string, string, error) {
+func (s *Service) getAccountOwnerAndNamespaceForNamespace(ctx context.Context, namespace string) (string, string, error) {
 	var ns corev1.Namespace
 	err := s.client.Get(ctx, client.ObjectKey{Name: namespace}, &ns)
 	if err != nil {
@@ -56,11 +56,11 @@ func (s *service) getAccountOwnerAndNamespaceForNamespace(ctx context.Context, n
 	return accountName, accountNamespace, nil
 }
 
-func (s *service) GetFirstLevelAccountForAccount(ctx context.Context, accountKey client.ObjectKey) (*v1alpha1.Account, error) {
+func (s *Service) GetFirstLevelAccountForAccount(ctx context.Context, accountKey client.ObjectKey) (*v1alpha1.Account, error) {
 	return s.GetFirstLevelAccountForNamespace(ctx, accountKey.Namespace)
 }
 
-func (s *service) GetFirstLevelAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error) {
+func (s *Service) GetFirstLevelAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error) {
 
 	accountName, accountNamespace, err := s.getAccountOwnerAndNamespaceForNamespace(ctx, namespace)
 	if err != nil {
@@ -76,13 +76,13 @@ func (s *service) GetFirstLevelAccountForNamespace(ctx context.Context, namespac
 	return &account, err
 }
 
-func (s *service) GetAccount(ctx context.Context, accountKey client.ObjectKey) (*v1alpha1.Account, error) {
+func (s *Service) GetAccount(ctx context.Context, accountKey client.ObjectKey) (*v1alpha1.Account, error) {
 	var account v1alpha1.Account
 	err := s.client.Get(ctx, accountKey, &account)
 	return &account, err
 }
 
-func (s *service) GetAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error) {
+func (s *Service) GetAccountForNamespace(ctx context.Context, namespace string) (*v1alpha1.Account, error) {
 	accountName, accountNamespace, err := s.getAccountOwnerAndNamespaceForNamespace(ctx, namespace)
 	if err != nil {
 		return nil, err

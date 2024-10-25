@@ -6,9 +6,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/pkg/subroutines"
-	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/pkg/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
 
 func TestExtensionReadyInterfaceFunction(t *testing.T) {
@@ -56,7 +57,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					out, err := json.Marshal(cond)
 					assert.NoError(t, err)
 
-					conditionMap := []interface{}{}
+					var conditionMap []interface{}
 					err = json.Unmarshal(out, &conditionMap)
 					assert.NoError(t, err)
 
@@ -126,7 +127,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					out, err := json.Marshal(cond)
 					assert.NoError(t, err)
 
-					conditionMap := []interface{}{}
+					var conditionMap []interface{}
 					err = json.Unmarshal(out, &conditionMap)
 					assert.NoError(t, err)
 
