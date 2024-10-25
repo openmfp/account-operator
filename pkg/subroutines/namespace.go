@@ -10,9 +10,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
+
+	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 )
 
 const (

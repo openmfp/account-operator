@@ -6,15 +6,17 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/openmfp/golang-commons/controller/lifecycle"
+	"github.com/openmfp/golang-commons/errors"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
 type ExtensionReadySubroutine struct {
@@ -35,7 +37,6 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 	}
-
 	account := instance.(*v1alpha1.Account)
 
 	for _, extension := range append(extensions, account.Spec.Extensions...) {
@@ -86,6 +87,6 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 	return ctrl.Result{}, nil
 }
 
-func (e *ExtensionReadySubroutine) Finalize(ctx context.Context, instance lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (e *ExtensionReadySubroutine) Finalize(_ context.Context, _ lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	return ctrl.Result{}, nil
 }

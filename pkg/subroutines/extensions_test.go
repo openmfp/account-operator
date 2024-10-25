@@ -5,10 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/openmfp/account-operator/api/v1alpha1"
-	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/pkg/subroutines"
-	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/openmfp/account-operator/api/v1alpha1"
+	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/pkg/subroutines"
+	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
 
 func TestGetName(t *testing.T) {

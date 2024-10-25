@@ -88,7 +88,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		c.NextProtos = []string{"http/1.1"}
 	}
 
-	tlsOpts := []func(*tls.Config){}
+	var tlsOpts []func(*tls.Config)
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
