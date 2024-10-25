@@ -113,8 +113,12 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	}
 	var mgr ctrl.Manager
 	var err error
-	if cfg.KcpEnabled {
-		mgr, err = kcp.NewClusterAwareManager(ctrl.GetConfigOrDie(), opts)
+	if cfg.Kcp.Enabled {
+		restCfg := ctrl.GetConfigOrDie()
+		if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
+			restCfg.Host = cfg.Kcp.VirtualWorkspaceUrl
+		}
+		mgr, err = kcp.NewClusterAwareManager(restCfg, opts)
 	} else {
 		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
 	}

@@ -41,8 +41,11 @@ type Config struct {
 			Enabled bool `envconfig:"default=true"`
 		}
 	}
-	MaxConcurrentReconciles int  `envconfig:"default=10"`
-	KcpEnabled              bool `envconfig:"default=false"`
+	MaxConcurrentReconciles int `envconfig:"default=10"`
+	Kcp                     struct {
+		Enabled             bool   `envconfig:"default=false"`
+		VirtualWorkspaceUrl string `envconfig:"optional"`
+	}
 }
 
 // NewFromEnv creates a Config from environment values
