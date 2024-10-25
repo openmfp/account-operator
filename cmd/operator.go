@@ -25,6 +25,7 @@ import (
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
@@ -96,7 +97,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
 	})
-
+	restCfg := ctrl.GetConfigOrDie()
 	opts := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -109,18 +110,19 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		HealthProbeBindAddress:        probeAddr,
 		LeaderElection:                enableLeaderElection,
 		LeaderElectionID:              "8c290d9a.openmfp.io",
+		LeaderElectionConfig:          restCfg,
 		LeaderElectionReleaseOnCancel: true,
 	}
 	var mgr ctrl.Manager
 	var err error
 	if cfg.Kcp.Enabled {
-		restCfg := ctrl.GetConfigOrDie()
+		mgrConfig := rest.CopyConfig(restCfg)
 		if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
-			restCfg.Host = cfg.Kcp.VirtualWorkspaceUrl
+			mgrConfig.Host = cfg.Kcp.VirtualWorkspaceUrl
 		}
-		mgr, err = kcp.NewClusterAwareManager(restCfg, opts)
+		mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
 	} else {
-		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+		mgr, err = ctrl.NewManager(restCfg, opts)
 	}
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to start manager")
