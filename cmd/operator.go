@@ -32,6 +32,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
 )
@@ -92,6 +93,10 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	var tlsOpts []func(*tls.Config)
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
+	}
+
+	if cfg.Kcp.Enabled {
+		tenancyv1alpha1.AddToScheme(scheme)
 	}
 
 	webhookServer := webhook.NewServer(webhook.Options{
