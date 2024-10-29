@@ -379,6 +379,11 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 					*wss = tenancyv1alpha1.WorkspaceList{
 						Items: []tenancyv1alpha1.Workspace{
 							{
+								Spec: tenancyv1alpha1.WorkspaceSpec{
+									Cluster: "foo",
+								},
+							},
+							{
 								ObjectMeta: metav1.ObjectMeta{
 									Annotations: map[string]string{
 										logicalcluster.AnnotationKey:        "root",
