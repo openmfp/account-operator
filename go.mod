@@ -7,7 +7,7 @@ replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/openfga/api/proto v0.0.0-20241028145042-7c098f10acd2
-	github.com/openmfp/golang-commons v0.85.0
+	github.com/openmfp/golang-commons v0.86.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
