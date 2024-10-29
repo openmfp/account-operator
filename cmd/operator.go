@@ -24,6 +24,7 @@ import (
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -96,7 +97,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	}
 
 	if cfg.Kcp.Enabled {
-		tenancyv1alpha1.AddToScheme(scheme)
+		utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
 	}
 
 	webhookServer := webhook.NewServer(webhook.Options{
