@@ -91,6 +91,9 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 							SpecGoTemplate: apiextensionsv1.JSON{
 								Raw: []byte(`{"foo":"bar"}`),
 							},
+							MetadataGoTemplate: apiextensionsv1.JSON{
+								Raw: []byte(`{"annotations": {"test": "test"}}`),
+							},
 						},
 					},
 				},
