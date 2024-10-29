@@ -95,7 +95,6 @@ spec:
                     specGoTemplate:
                       x-kubernetes-preserve-unknown-fields: true
                   required:
-                  - metadataGoTemplate
                   - specGoTemplate
                   type: object
                 type: array

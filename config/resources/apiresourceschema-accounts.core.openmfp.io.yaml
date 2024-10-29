@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v241029-b055cfc.accounts.core.openmfp.io
+  name: v241029-1a02f92.accounts.core.openmfp.io
 spec:
   group: core.openmfp.io
   names:
@@ -91,7 +91,6 @@ spec:
                   specGoTemplate:
                     x-kubernetes-preserve-unknown-fields: true
                 required:
-                - metadataGoTemplate
                 - specGoTemplate
                 type: object
               type: array

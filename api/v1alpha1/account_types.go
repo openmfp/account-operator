@@ -57,7 +57,7 @@ type AccountSpec struct {
 
 type Extension struct {
 	metav1.TypeMeta    `json:",inline"`
-	MetadataGoTemplate apiextensionsv1.JSON `json:"metadataGoTemplate"`
+	MetadataGoTemplate apiextensionsv1.JSON `json:"metadataGoTemplate,omitempty"`
 	SpecGoTemplate     apiextensionsv1.JSON `json:"specGoTemplate"`
 
 	// The type of a condition that must be set to True on the Extension object

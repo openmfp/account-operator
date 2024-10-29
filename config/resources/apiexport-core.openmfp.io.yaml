@@ -5,5 +5,5 @@ metadata:
   name: core.openmfp.io
 spec:
   latestResourceSchemas:
-  - v241029-b055cfc.accounts.core.openmfp.io
+  - v241029-1a02f92.accounts.core.openmfp.io
 status: {}
