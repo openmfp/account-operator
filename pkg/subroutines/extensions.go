@@ -8,6 +8,8 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
 	v1 "k8s.io/api/core/v1"
@@ -17,6 +19,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
@@ -141,12 +144,16 @@ func (e *ExtensionSubroutine) Finalizers() []string { return []string{} }
 func collectExtensions(ctx context.Context, cl client.Client, lookupNamespace string) ([]v1alpha1.Extension, error) {
 	var extensions []v1alpha1.Extension
 	for {
-		parentAccount, err := getParentAccount(ctx, cl, lookupNamespace)
+		parentAccount, newClusterContext, err := getParentAccount(ctx, cl, lookupNamespace)
 		if errors.Is(err, ErrNoParentAvailable) {
 			break
 		}
 		if err != nil {
 			return nil, err
+		}
+
+		if newClusterContext != nil {
+			ctx = kontext.WithCluster(ctx, logicalcluster.Name(*newClusterContext))
 		}
 
 		lookupNamespace = parentAccount.GetNamespace()
@@ -157,34 +164,69 @@ func collectExtensions(ctx context.Context, cl client.Client, lookupNamespace st
 	return extensions, nil
 }
 
-func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alpha1.Account, error) {
+func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alpha1.Account, *string, error) {
+
+	if cluster, ok := kontext.ClusterFrom(ctx); ok && !cluster.Empty() {
+
+		wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(""))
+		list := &tenancyv1alpha1.WorkspaceList{}
+
+		err := cl.List(wsCtx, list)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for _, ws := range list.Items {
+			if ws.Spec.Cluster != cluster.String() {
+				continue
+			}
+
+			clusterName := ws.Annotations[logicalcluster.AnnotationKey]
+
+			parentCtx := kontext.WithCluster(ctx, logicalcluster.Name(clusterName))
+
+			parentAccount := v1alpha1.Account{}
+			err = cl.Get(parentCtx, types.NamespacedName{
+				Name:      ws.Annotations[v1alpha1.NamespaceAccountOwnerLabel],
+				Namespace: ns,
+			}, &parentAccount)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			return &parentAccount, &clusterName, nil
+		}
+
+		return nil, nil, ErrNoParentAvailable
+	}
+
 	var namespace v1.Namespace
 	err := cl.Get(ctx, types.NamespacedName{Name: ns}, &namespace)
 	if kerrors.IsNotFound(err) {
-		return nil, ErrNoParentAvailable
+		return nil, nil, ErrNoParentAvailable
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	accountName, ok := namespace.GetLabels()[v1alpha1.NamespaceAccountOwnerLabel]
 	if !ok || accountName == "" {
-		return nil, ErrNoParentAvailable
+		return nil, nil, ErrNoParentAvailable
 	}
 
 	accountNamespace, ok := namespace.GetLabels()[v1alpha1.NamespaceAccountOwnerNamespaceLabel]
 	if !ok || accountNamespace == "" {
-		return nil, ErrNoParentAvailable
+		return nil, nil, ErrNoParentAvailable
 	}
 
 	var account v1alpha1.Account
 	err = cl.Get(ctx, types.NamespacedName{Name: accountName, Namespace: accountNamespace}, &account)
 	if kerrors.IsNotFound(err) {
-		return nil, ErrNoParentAvailable
+		return nil, nil, ErrNoParentAvailable
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &account, nil
+	return &account, nil, nil
 }

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
@@ -39,6 +42,7 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 		name        string
 		account     v1alpha1.Account
 		k8sMocks    func(*mocks.Client)
+		contextFunc func() context.Context
 		expectError bool
 	}{
 		{
@@ -343,6 +347,121 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
+		{
+			name: "should work with 1 level parent accounts and kcp enabled",
+			contextFunc: func() context.Context {
+				return kontext.WithCluster(context.Background(), logicalcluster.Name("kcp"))
+			},
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().List(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, ol client.ObjectList, lo ...client.ListOption) error {
+					wss := ol.(*tenancyv1alpha1.WorkspaceList)
+
+					*wss = tenancyv1alpha1.WorkspaceList{
+						Items: []tenancyv1alpha1.Workspace{
+							{
+								Spec: tenancyv1alpha1.WorkspaceSpec{
+									Cluster: "foo",
+								},
+							},
+							{
+								ObjectMeta: metav1.ObjectMeta{
+									Annotations: map[string]string{
+										logicalcluster.AnnotationKey:        "root",
+										v1alpha1.NamespaceAccountOwnerLabel: "first-level",
+									},
+								},
+								Spec: tenancyv1alpha1.WorkspaceSpec{
+									Cluster: "kcp",
+								},
+							},
+						},
+					}
+					return nil
+				}).Once()
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+					account := o.(*v1alpha1.Account)
+
+					*account = v1alpha1.Account{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "fist-level",
+							Namespace: "first-level",
+						},
+						Spec: v1alpha1.AccountSpec{
+							Extensions: []v1alpha1.Extension{
+								{
+									TypeMeta: metav1.TypeMeta{
+										Kind:       "AccountExtension",
+										APIVersion: "core.openmfp.io/v1alpha1",
+									},
+									SpecGoTemplate: apiextensionsv1.JSON{},
+								},
+							},
+						},
+					}
+
+					return nil
+				}).Once()
+
+				c.EXPECT().List(mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
+		{
+			name:        "should fail if error during listing kcp enabled",
+			expectError: true,
+			contextFunc: func() context.Context {
+				return kontext.WithCluster(context.Background(), logicalcluster.Name("kcp"))
+			},
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().List(mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test")).Once()
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -351,8 +470,13 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				test.k8sMocks(k8sClient)
 			}
 
+			ctx := context.Background()
+			if test.contextFunc != nil {
+				ctx = test.contextFunc()
+			}
+
 			routine := subroutines.NewExtensionSubroutine(k8sClient)
-			_, err := routine.Process(context.Background(), &test.account)
+			_, err := routine.Process(ctx, &test.account)
 			if test.expectError {
 				assert.NotNil(t, err)
 			} else {
