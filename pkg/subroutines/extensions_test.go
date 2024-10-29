@@ -109,6 +109,41 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 			},
 		},
 		{
+			name: "should fail without parent accounts and extension spec due to invalid json",
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{
+								Raw: []byte(`{"foo":"bar"}`),
+							},
+							MetadataGoTemplate: apiextensionsv1.JSON{
+								Raw: []byte(`123jjj`),
+							},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			expectError: true,
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				// c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				// c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
+			},
+		},
+		{
 			name: "should fail without parent accounts due to random error",
 			account: v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
