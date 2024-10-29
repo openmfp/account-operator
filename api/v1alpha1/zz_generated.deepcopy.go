@@ -159,6 +159,7 @@ func (in *AccountStatus) DeepCopy() *AccountStatus {
 func (in *Extension) DeepCopyInto(out *Extension) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
+	in.MetadataGoTemplate.DeepCopyInto(&out.MetadataGoTemplate)
 	in.SpecGoTemplate.DeepCopyInto(&out.SpecGoTemplate)
 	if in.ReadyConditionType != nil {
 		in, out := &in.ReadyConditionType, &out.ReadyConditionType
