@@ -50,10 +50,21 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 		us := unstructured.Unstructured{}
 		us.SetGroupVersionKind(extension.GroupVersionKind())
 
+		var metadataKeyValues map[string]any
+		err := json.NewDecoder(bytes.NewReader(extension.MetadataGoTemplate.Raw)).Decode(&metadataKeyValues)
+		if err != nil {
+			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+		}
+
+		err = RenderExtensionSpec(ctx, metadataKeyValues, account, &us, []string{"metadata"})
+		if err != nil {
+			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+		}
+
 		us.SetName(strings.ToLower(extension.Kind))
 		us.SetNamespace(*account.Status.Namespace)
 
-		_, err := controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
+		_, err = controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
 			if len(extension.SpecGoTemplate.Raw) == 0 {
 				return nil
 			}
