@@ -56,8 +56,9 @@ type AccountSpec struct {
 }
 
 type Extension struct {
-	metav1.TypeMeta `json:",inline"`
-	SpecGoTemplate  apiextensionsv1.JSON `json:"specGoTemplate"`
+	metav1.TypeMeta    `json:",inline"`
+	MetadataGoTemplate apiextensionsv1.JSON `json:"metadataGoTemplate"`
+	SpecGoTemplate     apiextensionsv1.JSON `json:"specGoTemplate"`
 
 	// The type of a condition that must be set to True on the Extension object
 	// for the extension to be considered reconciled and ready. If this is empty,

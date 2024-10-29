@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v241024-b5d9cd8.accounts.core.openmfp.io
+  name: v241029-b055cfc.accounts.core.openmfp.io
 spec:
   group: core.openmfp.io
   names:
@@ -80,6 +80,8 @@ spec:
                       In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                     type: string
+                  metadataGoTemplate:
+                    x-kubernetes-preserve-unknown-fields: true
                   readyConditionType:
                     description: |-
                       The type of a condition that must be set to True on the Extension object
@@ -89,6 +91,7 @@ spec:
                   specGoTemplate:
                     x-kubernetes-preserve-unknown-fields: true
                 required:
+                - metadataGoTemplate
                 - specGoTemplate
                 type: object
               type: array
