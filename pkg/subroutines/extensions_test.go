@@ -432,6 +432,36 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
+		{
+			name:        "should fail if error during listing kcp enabled",
+			expectError: true,
+			contextFunc: func() context.Context {
+				return kontext.WithCluster(context.Background(), logicalcluster.Name("kcp"))
+			},
+			account: v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-account-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Extensions: []v1alpha1.Extension{
+						{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "AccountExtension",
+								APIVersion: "core.openmfp.io/v1alpha1",
+							},
+							SpecGoTemplate: apiextensionsv1.JSON{},
+						},
+					},
+				},
+				Status: v1alpha1.AccountStatus{
+					Namespace: &namespace,
+				},
+			},
+			k8sMocks: func(c *mocks.Client) {
+				c.EXPECT().List(mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test")).Once()
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
