@@ -148,8 +148,8 @@ github.com/onsi/ginkgo/v2 v2.19.0 h1:9Cnnf7UHo57Hy3k6/m5k3dRfGTMXGvxhHFvkDTCTpvA
 github.com/onsi/ginkgo/v2 v2.19.0/go.mod h1:rlwLi9PilAFJ8jCg9UE1QP6VBpd6/xj3SRC0d6TU0To=
 github.com/onsi/gomega v1.33.1 h1:dsYjIxxSR755MDmKVsaFQTE22ChNBcuuTWgkUDSubOk=
 github.com/onsi/gomega v1.33.1/go.mod h1:U4R44UsT+9eLIaYRB2a5qajjtQYn0hauxvRm16AVYg0=
-github.com/openfga/api/proto v0.0.0-20241028145042-7c098f10acd2 h1:NCrUUKjJwE/1DE5HwOqU/B5Z7ZRGr0tqWTjZVzqrCDw=
-github.com/openfga/api/proto v0.0.0-20241028145042-7c098f10acd2/go.mod h1:gil5LBD8tSdFQbUkCQdnXsoeU9kDJdJgbGdHkgJfcd0=
+github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514 h1:ebCcwMV9LTbAG7so6PQt5qCLB6dz5VUW7/pf9sokG5M=
+github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514/go.mod h1:gil5LBD8tSdFQbUkCQdnXsoeU9kDJdJgbGdHkgJfcd0=
 github.com/openmfp/golang-commons v0.90.0 h1:q4Sxhl24jbC9DOhnYcaBtBjMFQJgd7AM5hz5q6NDo9U=
 github.com/openmfp/golang-commons v0.90.0/go.mod h1:AC/fBF+4s488V1rnpH2c491WWOiFvVnWpwD87t1HyQc=
 github.com/pingcap/errors v0.11.4 h1:lFuQV/oaUMGcD2tqt+01ROSmJs75VG1ToEOkZIZ4nE4=
