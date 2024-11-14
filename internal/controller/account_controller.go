@@ -56,9 +56,8 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	if cfg.Subroutines.ExtensionReady.Enabled {
 		subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
 	}
-	if cfg.Subroutines.Creator.Enabled {
-		conn, err := grpc.NewClient(cfg.Subroutines.Creator.FgaGrpcAddr,
-			grpc.EmptyDialOption{},
+	if cfg.Subroutines.FGA.Enabled {
+		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)
@@ -67,11 +66,11 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 			log.Fatal().Err(err).Msg("error when creating the grpc client")
 		}
 
-		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.Creator.RootNamespace)
+		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.FGA.RootNamespace)
 
 		cl := openfgav1.NewOpenFGAServiceClient(conn)
 
-		subs = append(subs, subroutines.NewCreatorSubroutine(cl, srv, cfg.Subroutines.Creator.RootNamespace))
+		subs = append(subs, subroutines.NewFGASubroutine(cl, srv, cfg.Subroutines.FGA.RootNamespace, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),
