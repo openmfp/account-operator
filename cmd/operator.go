@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
 )
@@ -102,6 +103,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
+		CertDir: cfg.Webhooks.CertDir,
 	})
 	restCfg := ctrl.GetConfigOrDie()
 	opts := ctrl.Options{
@@ -137,6 +139,12 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg)
 	if err := accountReconciler.SetupWithManager(mgr, cfg, log); err != nil {
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
+	}
+
+	if cfg.Webhooks.Enabled {
+		if err := v1alpha1.SetupAccountWebhookWithManager(mgr); err != nil {
+			log.Fatal().Err(err).Str("webhook", "Account").Msg("unable to create webhook")
+		}
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
