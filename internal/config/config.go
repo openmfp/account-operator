@@ -19,6 +19,10 @@ type Config struct {
 		BindAddress string `envconfig:"default=:8080"`
 		Secure      bool   `envconfig:"default=false"`
 	}
+	Webhooks struct {
+		Enabled bool   `envconfig:"default=false"`
+		CertDir string `envconfig:"default=certs,optional"`
+	}
 	Probes struct {
 		BindAddress string `envconfig:"default=:8081"`
 	}
