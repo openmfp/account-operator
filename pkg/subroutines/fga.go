@@ -159,12 +159,18 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 }
 
 func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Account) (string, error) {
-	a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, account.Namespace)
-	if err != nil {
-		return "", err
+	firstLevelAccountName := account.Namespace
+
+	if e.rootNamespace != account.Namespace {
+		a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, account.Namespace)
+		if err != nil {
+			return "", err
+		}
+
+		firstLevelAccountName = a.Name
 	}
 
-	storeId, err := helpers.GetStoreIDForTenant(ctx, e.client, a.Name)
+	storeId, err := helpers.GetStoreIDForTenant(ctx, e.client, firstLevelAccountName)
 	if err != nil {
 		return "", err
 	}
