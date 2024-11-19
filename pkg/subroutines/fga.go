@@ -159,7 +159,7 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 }
 
 func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Account) (string, error) {
-	firstLevelAccountName := account.Namespace
+	firstLevelAccountName := account.Name
 
 	if e.rootNamespace != account.Namespace {
 		a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, account.Namespace)
