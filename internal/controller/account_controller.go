@@ -57,14 +57,16 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 		subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
 	}
 	if cfg.Subroutines.FGA.Enabled {
+		log.Debug().Str("GrpcAddr", cfg.Subroutines.FGA.GrpcAddr).Msg("Creating FGA Client")
 		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)
-
 		if err != nil {
+
 			log.Fatal().Err(err).Msg("error when creating the grpc client")
 		}
+		log.Debug().Msg("FGA client created")
 
 		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.FGA.RootNamespace)
 
