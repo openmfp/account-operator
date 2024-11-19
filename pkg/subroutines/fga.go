@@ -3,6 +3,8 @@ package subroutines
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
@@ -70,29 +72,34 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 	}
 
 	if account.Spec.Creator != nil {
+		if valid := validateCreator(*account.Spec.Creator); !valid {
+			log.Error().Err(err).Str("creator", *account.Spec.Creator).Msg("creator string is in the protected service account prefix range")
+			return ctrl.Result{}, errors.NewOperatorError(err, false, false)
+		}
+		creator := formatUser(*account.Spec.Creator)
 		writes = append(writes, &openfgav1.TupleKey{
 			Object:   fmt.Sprintf("%s:%s", e.objectType, account.Name),
 			Relation: e.creatorRelation,
-			User:     fmt.Sprintf("user:%s", *account.Spec.Creator),
+			User:     fmt.Sprintf("user:%s", creator),
 		})
 	}
 
-	for _, write := range writes {
+	for _, writeTuple := range writes {
 
 		_, err = e.client.Write(ctx, &openfgav1.WriteRequest{
 			StoreId: storeId,
 			Writes: &openfgav1.WriteRequestWrites{
-				TupleKeys: []*openfgav1.TupleKey{write},
+				TupleKeys: []*openfgav1.TupleKey{writeTuple},
 			},
 		})
 
 		if helpers.IsDuplicateWriteError(err) {
-			log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possible duplicate)")
+			log.Info().Err(err).Msg("Open FGA writeTuple failed due to invalid input (possible duplicate)")
 			err = nil
 		}
 
 		if err != nil {
-			log.Error().Err(err).Msg("Open FGA write failed")
+			log.Error().Err(err).Msg("Open FGA writeTuple failed")
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 	}
@@ -127,24 +134,25 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	}
 
 	if account.Spec.Creator != nil {
+		creator := formatUser(*account.Spec.Creator)
 		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
 			Object:   fmt.Sprintf("%s:%s", e.objectType, account.GetName()),
 			Relation: e.creatorRelation,
-			User:     fmt.Sprintf("user:%s", *account.Spec.Creator),
+			User:     fmt.Sprintf("user:%s", creator),
 		})
 	}
 
-	for _, delete := range deletes {
+	for _, deleteTuple := range deletes {
 
 		_, err = e.client.Write(ctx, &openfgav1.WriteRequest{
 			StoreId: storeId,
 			Deletes: &openfgav1.WriteRequestDeletes{
-				TupleKeys: []*openfgav1.TupleKeyWithoutCondition{delete},
+				TupleKeys: []*openfgav1.TupleKeyWithoutCondition{deleteTuple},
 			},
 		})
 
 		if helpers.IsDuplicateWriteError(err) {
-			log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possibly trying to delete nonexisting entry)")
+			log.Info().Err(err).Msg("Open FGA write failed due to invalid input (possibly trying to deleteTuple nonexisting entry)")
 			err = nil
 		}
 
@@ -181,3 +189,19 @@ func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Accoun
 func (e *FGASubroutine) GetName() string { return "CreatorSubroutine" }
 
 func (e *FGASubroutine) Finalizers() []string { return []string{} }
+
+var saRegex = regexp.MustCompile(`^system:serviceaccount:[^:]*:[^:]*$`)
+
+// formatUser formats the user string to be used in the FGA write request
+// it replaces colons for users conforming to the kubernetes service account pattern with dots.
+func formatUser(user string) string {
+	if saRegex.MatchString(user) {
+		return strings.ReplaceAll(user, ":", ".")
+	}
+	return user
+}
+
+// validateCreator validates the creator string to ensure if it is not in the service account prefix range
+func validateCreator(creator string) bool {
+	return !strings.HasPrefix(creator, "system.serviceaccount")
+}
