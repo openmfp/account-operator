@@ -62,6 +62,8 @@ func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8Servi
 func TestCreatorSubroutine_Process(t *testing.T) {
 	namespace := "test-openmfp-namespace"
 	creator := "test-creator"
+	saCreator := "system:serviceaccount:some-namespace:some-service-account"
+	saCreatorFormatted := "system.serviceaccount.some-namespace.some-service-account"
 
 	testCases := []struct {
 		name          string
@@ -184,6 +186,40 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 			},
 		},
 		{
+			name: "should_succeed_with_creator_for_sa",
+			account: &v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Creator: &saCreator,
+				},
+			},
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
+				getStoreMocks(openFGAServiceClientMock, k8ServiceMock)
+
+				k8ServiceMock.EXPECT().
+					GetAccountForNamespace(mock.Anything, mock.Anything).
+					Return(&v1alpha1.Account{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "parent-account",
+						},
+					}, nil)
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.Anything).
+					Return(&openfgav1.WriteResponse{}, nil)
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						// Check for partial match
+						return len(req.Writes.TupleKeys) == 1 && req.Writes.TupleKeys[0].User == "user:"+saCreatorFormatted
+					})).
+					Return(&openfgav1.WriteResponse{}, nil)
+			},
+		},
+		{
 			name: "should_succeed_with_creator",
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -207,7 +243,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
-					Return(&openfgav1.WriteResponse{}, nil).Twice()
+					Return(&openfgav1.WriteResponse{}, nil)
 			},
 		},
 	}
