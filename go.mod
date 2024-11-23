@@ -12,7 +12,7 @@ require (
 	github.com/openmfp/golang-commons v0.100.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/vrischmann/envconfig v1.3.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.57.0
 	google.golang.org/grpc v1.68.0
