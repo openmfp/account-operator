@@ -107,8 +107,8 @@ github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20240817110845-a9eb9752bfeb h1:W11F/
 github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20240817110845-a9eb9752bfeb/go.mod h1:mEDD1K5BVUXJ4CP6wcJ0vZUf+7tbFMjkCFzBKsUNj18=
 github.com/kcp-dev/controller-runtime v0.19.0-kcp.1 h1:mbCyVzWuJpg+pkzIkIKLltiOgOSiQ3bqWmHi2mftzgc=
 github.com/kcp-dev/controller-runtime v0.19.0-kcp.1/go.mod h1:jwK5sBnpu/xJJ+xdpSzzI0aM52E/EvF0uLF9bR61h/Y=
-github.com/kcp-dev/kcp/sdk v0.26.0 h1:QB0BiidlW4ERXGb6A/W93IBCo0g1zlE6T/bcOMyONX4=
-github.com/kcp-dev/kcp/sdk v0.26.0/go.mod h1:XjabYVlKkpuRr1qATymS0gMTEjC6McuuwdoVGSar2fE=
+github.com/kcp-dev/kcp/sdk v0.26.1 h1:kzowAqlO6gfSmNFOXtcskg0tOhd8etG72XqvW06BUb0=
+github.com/kcp-dev/kcp/sdk v0.26.1/go.mod h1:XjabYVlKkpuRr1qATymS0gMTEjC6McuuwdoVGSar2fE=
 github.com/kcp-dev/logicalcluster/v3 v3.0.5 h1:JbYakokb+5Uinz09oTXomSUJVQsqfxEvU4RyHUYxHOU=
 github.com/kcp-dev/logicalcluster/v3 v3.0.5/go.mod h1:EWBUBxdr49fUB1cLMO4nOdBWmYifLbP1LfoL20KkXYY=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
