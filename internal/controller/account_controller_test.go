@@ -132,7 +132,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 		return err == nil && createdAccount.Finalizers != nil
 	}, defaultTestTimeout, defaultTickInterval)
 
-	suite.Equal(createdAccount.ObjectMeta.Finalizers, []string{subroutines.NamespaceSubroutineFinalizer})
+	suite.Equal(createdAccount.ObjectMeta.Finalizers, []string{subroutines.NamespaceSubroutineFinalizer, "account.core.openmfp.io/fga"})
 }
 
 func (suite *AccountTestSuite) TestNamespaceCreation() {

@@ -41,7 +41,7 @@ func TestCreatorSubroutine_GetName(t *testing.T) {
 
 func TestCreatorSubroutine_Finalizers(t *testing.T) {
 	routine := subroutines.NewFGASubroutine(nil, nil, "", "", "", "")
-	assert.Equal(t, []string{}, routine.Finalizers())
+	assert.Equal(t, []string{"account.core.openmfp.io/fga"}, routine.Finalizers())
 }
 
 func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service) {
