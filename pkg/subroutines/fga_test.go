@@ -429,7 +429,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
-					Return(&openfgav1.WriteResponse{}, nil).Twice()
+					Return(&openfgav1.WriteResponse{}, nil).Times(3)
 			},
 		},
 	}

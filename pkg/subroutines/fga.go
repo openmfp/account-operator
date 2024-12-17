@@ -143,9 +143,15 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	if account.Spec.Creator != nil {
 		creator := formatUser(*account.Spec.Creator)
 		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-			Object:   fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
+			Object:   fmt.Sprintf("role:%s/%s/owner", account.Spec.Type, account.Name),
 			Relation: "assignee",
 			User:     fmt.Sprintf("user:%s", creator),
+		})
+
+		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
+			Object:   fmt.Sprintf("%s:%s", e.objectType, account.Name),
+			Relation: e.creatorRelation,
+			User:     fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
 		})
 	}
 
