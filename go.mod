@@ -9,7 +9,7 @@ require (
 	github.com/kcp-dev/kcp/sdk v0.26.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
-	github.com/openmfp/golang-commons v0.111.0
+	github.com/openmfp/golang-commons v0.112.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
@@ -26,7 +26,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
-	github.com/99designs/gqlgen v0.17.61 // indirect
+	github.com/99designs/gqlgen v0.17.62 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -96,7 +96,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
