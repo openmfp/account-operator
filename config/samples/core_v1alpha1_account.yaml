@@ -8,11 +8,10 @@ spec:
   displayName: New Demo Account
   creator: test.user@example.com
   extensions:
-  - apiVersion: core.openmfp.io/v1alpha1
-    kind: AccountExtension
+  - apiVersion: v1
+    kind: ConfigMap
     specGoTemplate:
       foo: bar
-    readyConditionType: "Ready"
   data:
     some:
       nested:
