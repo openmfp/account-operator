@@ -37,6 +37,7 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 	}
+
 	account := instance.(*v1alpha1.Account)
 
 	for _, extension := range append(extensions, account.Spec.Extensions...) {
@@ -79,7 +80,7 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 			parsedConditions[i] = parsed
 		}
 
-		if !meta.IsStatusConditionTrue(parsedConditions, *extension.ReadyConditionType) {
+		if meta.IsStatusConditionFalse(parsedConditions, *extension.ReadyConditionType) {
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}

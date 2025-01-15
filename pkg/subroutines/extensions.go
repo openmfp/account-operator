@@ -62,8 +62,13 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 			}
 		}
-		us.SetName(strings.ToLower(extension.Kind))
-		us.SetNamespace(*account.Status.Namespace)
+
+		if us.GetName() == "" {
+			us.SetName(strings.ToLower(extension.Kind))
+		}
+		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+			us.SetNamespace(*account.Status.Namespace)
+		}
 
 		_, err = controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
 			if len(extension.SpecGoTemplate.Raw) == 0 {
@@ -146,8 +151,10 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 		us := unstructured.Unstructured{}
 		us.SetGroupVersionKind(extension.GroupVersionKind())
 
-		us.SetName(strings.ToLower(extension.GroupVersionKind().Kind))
-		us.SetNamespace(*account.Status.Namespace)
+		us.SetName(strings.ToLower(extension.Kind))
+		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+			us.SetNamespace(*account.Status.Namespace)
+		}
 
 		err := e.client.Delete(ctx, &us)
 		if kerrors.IsNotFound(err) {

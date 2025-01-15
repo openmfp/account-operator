@@ -71,6 +71,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
@@ -104,6 +106,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
@@ -236,6 +240,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
@@ -278,6 +284,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
@@ -308,6 +316,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
@@ -335,6 +345,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 			},
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(errors.New(""))
 			},
@@ -380,6 +392,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Account"))
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
@@ -465,6 +479,8 @@ func TestExtensionSubroutine_Process(t *testing.T) {
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
 				c.EXPECT().Create(mock.Anything, mock.Anything).Return(nil)
@@ -558,6 +574,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil)
 			},
 		},
@@ -585,6 +603,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 			},
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(errors.New(""))
 			},
@@ -614,6 +634,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 			},
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 			},
@@ -655,6 +677,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 					return nil
 				}).Once()
 
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
+
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					account := o.(*v1alpha1.Account)
 
@@ -680,6 +704,8 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 				}).Once()
 
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil)
 				c.EXPECT().Delete(mock.Anything, mock.Anything).Return(nil)
