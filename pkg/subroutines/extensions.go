@@ -87,6 +87,7 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 }
 
 func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account *v1alpha1.Account, us *unstructured.Unstructured, path []string) error {
+	renderAccount := account.DeepCopy()
 	for key, value := range keyValues {
 		switch val := value.(type) {
 		case string: // render string values
@@ -97,7 +98,7 @@ func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account 
 
 			var rendered bytes.Buffer
 			err = t.Execute(&rendered, map[string]any{
-				"Account": account,
+				"Account": *renderAccount,
 			})
 			if err != nil {
 				return err
