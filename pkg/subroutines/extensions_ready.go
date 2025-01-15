@@ -47,8 +47,26 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 
 		us := unstructured.Unstructured{}
 		us.SetGroupVersionKind(extension.GroupVersionKind())
-		us.SetName(strings.ToLower(extension.Kind))
-		us.SetNamespace(*account.Status.Namespace)
+
+		if len(extension.MetadataGoTemplate.Raw) > 0 {
+			var metadataKeyValues map[string]any
+			err := json.NewDecoder(bytes.NewReader(extension.MetadataGoTemplate.Raw)).Decode(&metadataKeyValues)
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+
+			err = RenderExtensionSpec(ctx, metadataKeyValues, account, &us, []string{"metadata"})
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+		}
+
+		if us.GetName() == "" {
+			us.SetName(strings.ToLower(extension.Kind))
+		}
+		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+			us.SetNamespace(*account.Status.Namespace)
+		}
 
 		err = e.client.Get(ctx, client.ObjectKeyFromObject(&us), &us)
 		if kerrors.IsNotFound(err) {

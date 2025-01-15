@@ -67,6 +67,8 @@ func TestExtensionReadySubroutine(t *testing.T) {
 
 					return nil
 				}).Once()
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 			},
 			account: v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
@@ -90,6 +92,8 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 			},
 			account: v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
@@ -137,6 +141,8 @@ func TestExtensionReadySubroutine(t *testing.T) {
 
 					return nil
 				}).Once()
+
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 			},
 			account: v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
@@ -184,6 +190,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			name: "should respect ready condition and fail in case the extension retrieval failed",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(errors.New("some error"))
 			},
 			account: v1alpha1.Account{
@@ -208,6 +215,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 			name: "should respect ready condition and fail for wrong format",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					us := o.(*unstructured.Unstructured)
 
