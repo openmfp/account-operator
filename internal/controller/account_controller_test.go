@@ -213,7 +213,7 @@ func (suite *AccountTestSuite) TestExtensionProcessing() {
 	testExtensionResource := `{
 		"podSelector": {
 			"matchLabels": {
-				"openmfp-owner": "{{ .Account.ObjectMeta.Name }}"
+				"openmfp-owner": "{{ .Account.metadata.name }}"
 			}
 		}
 	}`

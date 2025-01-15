@@ -714,7 +714,7 @@ func TestRenderExtensionSpec(t *testing.T) {
 		"number": int64(1),
 		"bool":   true,
 		"nested": map[string]any{
-			"value": "{{.Account.Spec.Creator}}",
+			"value": "{{.Account.spec.creator}}",
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
@@ -731,7 +731,7 @@ func TestRenderExtensionSpec(t *testing.T) {
 		"number": int64(1),
 		"bool":   true,
 		"nested": map[string]any{
-			"value": "{{ .Account.Spec.Creator | upper }}",
+			"value": "{{ .Account.spec.creator | upper }}",
 		},
 	}, &v1alpha1.Account{
 		Spec: v1alpha1.AccountSpec{
