@@ -15,6 +15,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -100,21 +101,14 @@ func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account 
 				return err
 			}
 
-			var intermediate bytes.Buffer
-			err = json.NewEncoder(&intermediate).Encode(account)
-			if err != nil {
-				return err
-			}
-
-			var renderAccount map[string]any
-			err = json.NewDecoder(&intermediate).Decode(&renderAccount)
+			renderedAccount, err := runtime.DefaultUnstructuredConverter.ToUnstructured(account)
 			if err != nil {
 				return err
 			}
 
 			var rendered bytes.Buffer
 			err = t.Execute(&rendered, map[string]any{
-				"Account": renderAccount,
+				"Account": renderedAccount,
 			})
 			if err != nil {
 				return err
