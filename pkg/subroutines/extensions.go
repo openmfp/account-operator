@@ -84,6 +84,9 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 			path := []string{"spec"}
 			return RenderExtensionSpec(ctx, keyValues, account, &us, path)
 		})
+		if kerrors.IsAlreadyExists(err) {
+			continue
+		}
 		if err != nil {
 			return ctrl.Result{}, errors.NewOperatorError(err, true, false)
 		}
