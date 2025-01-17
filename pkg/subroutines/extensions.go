@@ -207,12 +207,8 @@ func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alph
 func getParentAccountWithKcp(ctx context.Context, cl client.Client) (*v1alpha1.Account, *string, error) {
 
 	cluster, ok := kontext.ClusterFrom(ctx)
-	if !ok {
+	if !ok || cluster.Empty() {
 		return nil, nil, fmt.Errorf("no cluster context found, this is a configuration error")
-	}
-
-	if cluster.Empty() {
-		return nil, nil, fmt.Errorf("no cluster in context is empty")
 	}
 
 	wsCtx := kontext.WithCluster(ctx, "")
