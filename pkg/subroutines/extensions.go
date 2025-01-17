@@ -122,7 +122,10 @@ func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account 
 				return err
 			}
 		case map[string]any:
-			return RenderExtensionSpec(ctx, val, account, us, append(path, key))
+			err := RenderExtensionSpec(ctx, val, account, us, append(path, key))
+			if err != nil {
+				return err
+			}
 		default: // any other primitive type
 			err := unstructured.SetNestedField(us.Object, val, append(path, key)...)
 			if err != nil {
