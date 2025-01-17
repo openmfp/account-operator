@@ -245,6 +245,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 		name            string
 		mockObjects     []client.Object
 		expectedAccount client.ObjectKey
+		expectError     bool
 		namespace       string
 	}{
 		{
@@ -287,6 +288,39 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 				Name:      "first-level-account",
 			},
 		},
+		{
+			name: "invalid namespace",
+			mockObjects: []client.Object{
+				&v1alpha1.Account{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "first-level-account",
+						Namespace: "root-namespace",
+					},
+					Spec: v1alpha1.AccountSpec{
+						Type: v1alpha1.AccountTypeFolder,
+					},
+					Status: v1alpha1.AccountStatus{
+						Namespace: pointer.To("sub-namespace"),
+					},
+				},
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "first-level-sub-namespace1",
+					},
+				},
+				&v1alpha1.Account{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "sub-account",
+						Namespace: "first-level-sub-namespace1",
+					},
+					Spec: v1alpha1.AccountSpec{
+						Type: v1alpha1.AccountTypeFolder,
+					},
+				},
+			},
+			namespace:   "first-level-sub-namespace1",
+			expectError: true,
+		},
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {
@@ -298,22 +332,26 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 			}
 
 			account, err := svc.GetFirstLevelAccountForNamespace(context.Background(), test.namespace)
-			s.Require().NoError(err)
-
-			s.Require().Equal(test.expectedAccount.Name, account.Name)
-			s.Require().Equal(test.expectedAccount.Namespace, account.Namespace)
-
-			account, err = svc.GetFirstLevelAccountForAccount(context.Background(), types.NamespacedName{Namespace: test.namespace, Name: "sub-account"})
-			s.Require().NoError(err)
-
-			s.Require().Equal(test.expectedAccount.Name, account.Name)
-			s.Require().Equal(test.expectedAccount.Namespace, account.Namespace)
-
-			slices.Reverse(test.mockObjects)
-
-			for _, obj := range test.mockObjects {
-				err := s.testClient.Delete(context.Background(), obj)
+			if test.expectError {
+				s.Require().Error(err)
+			} else {
 				s.Require().NoError(err)
+
+				s.Require().Equal(test.expectedAccount.Name, account.Name)
+				s.Require().Equal(test.expectedAccount.Namespace, account.Namespace)
+
+				account, err = svc.GetFirstLevelAccountForAccount(context.Background(), types.NamespacedName{Namespace: test.namespace, Name: "sub-account"})
+				s.Require().NoError(err)
+
+				s.Require().Equal(test.expectedAccount.Name, account.Name)
+				s.Require().Equal(test.expectedAccount.Namespace, account.Namespace)
+
+				slices.Reverse(test.mockObjects)
+
+				for _, obj := range test.mockObjects {
+					err := s.testClient.Delete(context.Background(), obj)
+					s.Require().NoError(err)
+				}
 			}
 		})
 	}
