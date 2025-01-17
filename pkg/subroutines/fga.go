@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
@@ -13,6 +14,8 @@ import (
 	"github.com/openmfp/golang-commons/logger"
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/pkg/service"
@@ -20,6 +23,7 @@ import (
 
 type FGASubroutine struct {
 	client          openfgav1.OpenFGAServiceClient
+	k8sClient       client.Client
 	srv             service.Servicer
 	rootNamespace   string
 	objectType      string
@@ -183,12 +187,25 @@ func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Accoun
 	firstLevelAccountName := account.Name
 
 	if e.rootNamespace != account.Namespace {
-		a, err := e.srv.GetFirstLevelAccountForNamespace(ctx, account.Namespace)
-		if err != nil {
-			return "", err
-		}
 
-		firstLevelAccountName = a.Name
+		lookupNamespace := account.Namespace
+		lookupCtx := ctx
+		for {
+			parent, newClusterContext, err := getParentAccount(lookupCtx, e.k8sClient, lookupNamespace)
+			if errors.Is(err, ErrNoParentAvailable) {
+				break
+			}
+			if err != nil {
+				return "", err
+			}
+
+			if newClusterContext != nil {
+				lookupCtx = kontext.WithCluster(lookupCtx, logicalcluster.Name(*newClusterContext))
+			}
+
+			lookupNamespace = parent.GetNamespace()
+			firstLevelAccountName = parent.GetName()
+		}
 	}
 
 	storeId, err := helpers.GetStoreIDForTenant(ctx, e.client, firstLevelAccountName)
