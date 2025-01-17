@@ -70,9 +70,9 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 
 		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.FGA.RootNamespace)
 
-		cl := openfgav1.NewOpenFGAServiceClient(conn)
+		fgaClient := openfgav1.NewOpenFGAServiceClient(conn)
 
-		subs = append(subs, subroutines.NewFGASubroutine(cl, srv, cfg.Subroutines.FGA.RootNamespace, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
+		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, srv, cfg.Subroutines.FGA.RootNamespace, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),

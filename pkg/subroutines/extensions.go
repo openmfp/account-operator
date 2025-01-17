@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -196,40 +197,57 @@ func collectExtensions(ctx context.Context, cl client.Client, lookupNamespace st
 }
 
 func getParentAccount(ctx context.Context, cl client.Client, ns string) (*v1alpha1.Account, *string, error) {
+	if _, ok := kontext.ClusterFrom(ctx); ok {
+		return getParentAccountWithKcp(ctx, cl)
+	} else {
+		return getParentAccountByNs(ctx, cl, ns)
+	}
+}
 
-	if cluster, ok := kontext.ClusterFrom(ctx); ok && !cluster.Empty() {
+func getParentAccountWithKcp(ctx context.Context, cl client.Client) (*v1alpha1.Account, *string, error) {
 
-		wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(""))
-		list := &tenancyv1alpha1.WorkspaceList{}
+	cluster, ok := kontext.ClusterFrom(ctx)
+	if !ok {
+		return nil, nil, fmt.Errorf("no cluster context found, this is a configuration error")
+	}
 
-		err := cl.List(wsCtx, list)
+	if cluster.Empty() {
+		return nil, nil, fmt.Errorf("no cluster in context is empty")
+	}
+
+	wsCtx := kontext.WithCluster(ctx, "")
+	list := &tenancyv1alpha1.WorkspaceList{}
+
+	err := cl.List(wsCtx, list)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, ws := range list.Items {
+		if ws.Spec.Cluster != cluster.String() {
+			continue
+		}
+
+		clusterName := ws.Annotations[logicalcluster.AnnotationKey]
+
+		parentCtx := kontext.WithCluster(ctx, logicalcluster.Name(clusterName))
+
+		parentAccount := v1alpha1.Account{}
+		err = cl.Get(parentCtx, types.NamespacedName{
+			Name:      ws.Annotations[v1alpha1.NamespaceAccountOwnerLabel],
+			Namespace: ws.Annotations[v1alpha1.NamespaceAccountOwnerNamespaceLabel],
+		}, &parentAccount)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		for _, ws := range list.Items {
-			if ws.Spec.Cluster != cluster.String() {
-				continue
-			}
-
-			clusterName := ws.Annotations[logicalcluster.AnnotationKey]
-
-			parentCtx := kontext.WithCluster(ctx, logicalcluster.Name(clusterName))
-
-			parentAccount := v1alpha1.Account{}
-			err = cl.Get(parentCtx, types.NamespacedName{
-				Name:      ws.Annotations[v1alpha1.NamespaceAccountOwnerLabel],
-				Namespace: ns,
-			}, &parentAccount)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			return &parentAccount, &clusterName, nil
-		}
-
-		return nil, nil, ErrNoParentAvailable
+		return &parentAccount, &clusterName, nil
 	}
+
+	return nil, nil, ErrNoParentAvailable
+}
+
+func getParentAccountByNs(ctx context.Context, cl client.Client, ns string) (*v1alpha1.Account, *string, error) {
 
 	var namespace v1.Namespace
 	err := cl.Get(ctx, types.NamespacedName{Name: ns}, &namespace)
