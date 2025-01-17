@@ -22,8 +22,8 @@ import (
 )
 
 type FGASubroutine struct {
-	client          openfgav1.OpenFGAServiceClient
-	k8sClient       client.Client
+	fgaClient       openfgav1.OpenFGAServiceClient
+	client          client.Client
 	srv             service.Servicer
 	rootNamespace   string
 	objectType      string
@@ -31,9 +31,10 @@ type FGASubroutine struct {
 	creatorRelation string
 }
 
-func NewFGASubroutine(cl openfgav1.OpenFGAServiceClient, s service.Servicer, rootNamespace, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
+func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient, s service.Servicer, rootNamespace, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
 	return &FGASubroutine{
 		client:          cl,
+		fgaClient:       fgaClient,
 		srv:             s,
 		rootNamespace:   rootNamespace,
 		creatorRelation: creatorRelation,
@@ -61,8 +62,9 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 	writes := []*openfgav1.TupleKey{}
 
+	// Determine parent account to create parent relation
 	if account.GetNamespace() != e.rootNamespace {
-		parent, err := e.srv.GetAccountForNamespace(ctx, account.GetNamespace())
+		parent, _, err := getParentAccount(ctx, e.client, account.GetNamespace())
 		if err != nil {
 			log.Error().Err(err).Msg("Couldn't get parent account")
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
@@ -75,6 +77,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		})
 	}
 
+	// Assign creator to the account
 	if account.Spec.Creator != nil {
 		if valid := validateCreator(*account.Spec.Creator); !valid {
 			log.Error().Err(err).Str("creator", *account.Spec.Creator).Msg("creator string is in the protected service account prefix range")
@@ -97,7 +100,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 	for _, writeTuple := range writes {
 
-		_, err = e.client.Write(ctx, &openfgav1.WriteRequest{
+		_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
 			StoreId: storeId,
 			Writes: &openfgav1.WriteRequestWrites{
 				TupleKeys: []*openfgav1.TupleKey{writeTuple},
@@ -131,7 +134,7 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	deletes := []*openfgav1.TupleKeyWithoutCondition{}
 
 	if account.GetNamespace() != e.rootNamespace {
-		parent, err := e.srv.GetAccountForNamespace(ctx, account.GetNamespace())
+		parent, _, err := getParentAccount(ctx, e.client, account.GetNamespace())
 		if err != nil {
 			log.Error().Err(err).Msg("Couldn't get parent account")
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
@@ -161,7 +164,7 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 
 	for _, deleteTuple := range deletes {
 
-		_, err = e.client.Write(ctx, &openfgav1.WriteRequest{
+		_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
 			StoreId: storeId,
 			Deletes: &openfgav1.WriteRequestDeletes{
 				TupleKeys: []*openfgav1.TupleKeyWithoutCondition{deleteTuple},
@@ -191,7 +194,7 @@ func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Accoun
 		lookupNamespace := account.Namespace
 		lookupCtx := ctx
 		for {
-			parent, newClusterContext, err := getParentAccount(lookupCtx, e.k8sClient, lookupNamespace)
+			parent, newClusterContext, err := getParentAccount(lookupCtx, e.client, lookupNamespace)
 			if errors.Is(err, ErrNoParentAvailable) {
 				break
 			}
@@ -208,7 +211,7 @@ func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Accoun
 		}
 	}
 
-	storeId, err := helpers.GetStoreIDForTenant(ctx, e.client, firstLevelAccountName)
+	storeId, err := helpers.GetStoreIDForTenant(ctx, e.fgaClient, firstLevelAccountName)
 	if err != nil {
 		return "", err
 	}
