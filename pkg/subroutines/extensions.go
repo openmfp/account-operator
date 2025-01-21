@@ -26,6 +26,11 @@ import (
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
+const (
+	ExtensionSubroutineName      = "ExtensionSubroutine"
+	ExtensionSubroutineFinalizer = "account.core.openmfp.io/ext"
+)
+
 type ExtensionSubroutine struct {
 	client client.Client
 }
@@ -169,9 +174,9 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 	return ctrl.Result{}, nil
 }
 
-func (e *ExtensionSubroutine) GetName() string { return "ExtensionSubroutine" }
+func (e *ExtensionSubroutine) GetName() string { return ExtensionSubroutineName }
 
-func (e *ExtensionSubroutine) Finalizers() []string { return []string{"account.core.openmfp.io/ext"} }
+func (e *ExtensionSubroutine) Finalizers() []string { return []string{ExtensionSubroutineFinalizer} }
 
 func collectExtensions(ctx context.Context, cl client.Client, lookupNamespace string) ([]v1alpha1.Extension, error) {
 	var extensions []v1alpha1.Extension

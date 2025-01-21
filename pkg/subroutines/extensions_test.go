@@ -32,7 +32,7 @@ func TestGetName(t *testing.T) {
 
 func TestFinalizers(t *testing.T) {
 	routine := subroutines.NewExtensionSubroutine(nil)
-	assert.Equal(t, []string{}, routine.Finalizers())
+	assert.Equal(t, []string{subroutines.ExtensionSubroutineFinalizer}, routine.Finalizers())
 }
 
 func TestExtensionSubroutine_Process(t *testing.T) {
