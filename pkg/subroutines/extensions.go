@@ -171,7 +171,7 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 
 func (e *ExtensionSubroutine) GetName() string { return "ExtensionSubroutine" }
 
-func (e *ExtensionSubroutine) Finalizers() []string { return []string{} }
+func (e *ExtensionSubroutine) Finalizers() []string { return []string{"account.core.openmfp.io/ext"} }
 
 func collectExtensions(ctx context.Context, cl client.Client, lookupNamespace string) ([]v1alpha1.Extension, error) {
 	var extensions []v1alpha1.Extension
