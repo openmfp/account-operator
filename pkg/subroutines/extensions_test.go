@@ -655,7 +655,7 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
 							MetadataGoTemplate: apiextensionsv1.JSON{
-								[]byte(`{
+								Raw: []byte(`{
                     "annotations": {
                         "account.core.openmfp.io/owner": "{{ .Account.metadata.name }}",
                         "account.core.openmfp.io/owner-namespace": "{{ .Account.metadata.namespace }}"
