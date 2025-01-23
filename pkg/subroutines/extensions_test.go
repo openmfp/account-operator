@@ -654,6 +654,15 @@ func TestExtensionSubroutine_Finalize(t *testing.T) {
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
 							},
+							MetadataGoTemplate: apiextensionsv1.JSON{
+								[]byte(`{
+                    "annotations": {
+                        "account.core.openmfp.io/owner": "{{ .Account.metadata.name }}",
+                        "account.core.openmfp.io/owner-namespace": "{{ .Account.metadata.namespace }}"
+                    },
+                    "name": "{{ .Account.metadata.name }}"
+                }`),
+							},
 							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
 					},
