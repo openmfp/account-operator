@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,7 +42,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		expectedResult ctrl.Result
 	}{
 		{
-			name: "should respect ready condition and return sucessfully",
+			name: "should respect ready condition and return successfully",
 			k8sMocks: func(c *mocks.Client) {
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
@@ -74,6 +75,15 @@ func TestExtensionReadySubroutine(t *testing.T) {
 				Spec: v1alpha1.AccountSpec{
 					Extensions: []v1alpha1.Extension{
 						{
+							MetadataGoTemplate: apiextensionsv1.JSON{
+								Raw: []byte(`{
+									"annotations": {
+										"account.core.openmfp.io/owner": "{{ .Account.metadata.name }}",
+										"account.core.openmfp.io/owner-namespace": "{{ .Account.metadata.namespace }}"
+									},
+									"name": "{{ .Account.metadata.name }}"
+								}`),
+							},
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
 								APIVersion: "core.openmfp.io/v1alpha1",
