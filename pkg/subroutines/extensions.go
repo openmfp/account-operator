@@ -13,6 +13,7 @@ import (
 	"github.com/kcp-dev/logicalcluster/v3"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
+	"github.com/openmfp/golang-commons/logger"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -144,6 +145,7 @@ func RenderExtensionSpec(ctx context.Context, keyValues map[string]any, account 
 }
 
 func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	log := logger.LoadLoggerFromContext(ctx)
 	account := instance.(*v1alpha1.Account)
 
 	lookupNamespace := account.GetNamespace()
@@ -157,10 +159,30 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 		us := unstructured.Unstructured{}
 		us.SetGroupVersionKind(extension.GroupVersionKind())
 
-		us.SetName(strings.ToLower(extension.Kind))
+		if len(extension.MetadataGoTemplate.Raw) > 0 {
+			var metadataKeyValues map[string]any
+			err := json.NewDecoder(bytes.NewReader(extension.MetadataGoTemplate.Raw)).Decode(&metadataKeyValues)
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+			err = RenderExtensionSpec(ctx, metadataKeyValues, account, &us, []string{"metadata"})
+			if err != nil {
+				return ctrl.Result{}, errors.NewOperatorError(err, true, false)
+			}
+		}
+
+		if us.GetName() == "" {
+			us.SetName(strings.ToLower(extension.Kind))
+		}
 		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
 			us.SetNamespace(*account.Status.Namespace)
 		}
+
+		log.Info().
+			Str("name", us.GetName()).
+			Str("kind", us.GetKind()).
+			Str("namespace", us.GetNamespace()).
+			Msg("Deleting extension")
 
 		err := e.client.Delete(ctx, &us)
 		if kerrors.IsNotFound(err) {
