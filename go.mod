@@ -13,7 +13,7 @@ require (
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
-	github.com/vrischmann/envconfig v1.3.0
+	github.com/vrischmann/envconfig v1.4.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0
 	google.golang.org/grpc v1.70.0
 	k8s.io/api v0.32.1
