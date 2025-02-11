@@ -9,7 +9,7 @@ require (
 	github.com/kcp-dev/kcp/sdk v0.26.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
-	github.com/openmfp/golang-commons v0.132.0
+	github.com/openmfp/golang-commons v0.133.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
@@ -86,7 +86,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
