@@ -117,7 +117,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		WebhookServer:                 webhookServer,
 		HealthProbeBindAddress:        probeAddr,
 		LeaderElection:                enableLeaderElection,
-		LeaderElectionID:              "8c290d9a.openmfp.io",
+		LeaderElectionID:              "8c290d9a.openmfp.org",
 		LeaderElectionConfig:          restCfg,
 		LeaderElectionReleaseOnCancel: true,
 	}

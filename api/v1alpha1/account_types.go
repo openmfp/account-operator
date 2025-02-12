@@ -26,8 +26,8 @@ type AccountType string
 const (
 	AccountTypeFolder                   AccountType = "folder"
 	AccountTypeAccount                  AccountType = "account"
-	NamespaceAccountOwnerLabel                      = "account.core.openmfp.io/owner"
-	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.io/owner-namespace"
+	NamespaceAccountOwnerLabel                      = "account.core.openmfp.org/owner"
+	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.org/owner-namespace"
 )
 
 // AccountSpec defines the desired state of Account

@@ -78,15 +78,15 @@ func TestExtensionReadySubroutine(t *testing.T) {
 							MetadataGoTemplate: apiextensionsv1.JSON{
 								Raw: []byte(`{
 									"annotations": {
-										"account.core.openmfp.io/owner": "{{ .Account.metadata.name }}",
-										"account.core.openmfp.io/owner-namespace": "{{ .Account.metadata.namespace }}"
+										"account.core.openmfp.org/owner": "{{ .Account.metadata.name }}",
+										"account.core.openmfp.org/owner-namespace": "{{ .Account.metadata.namespace }}"
 									},
 									"name": "{{ .Account.metadata.name }}"
 								}`),
 							},
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -111,7 +111,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -160,7 +160,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -184,7 +184,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -209,7 +209,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -242,7 +242,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							ReadyConditionType: &readyCondition,
 						},
@@ -265,7 +265,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 						},
 					},
