@@ -18,7 +18,7 @@ import (
 
 const (
 	NamespaceSubroutineName      = "NamespaceSubroutine"
-	NamespaceSubroutineFinalizer = "account.core.openmfp.io/finalizer"
+	NamespaceSubroutineFinalizer = "account.core.openmfp.org/finalizer"
 	NamespaceNamePrefix          = "account-"
 )
 
@@ -63,7 +63,7 @@ func (r *NamespaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle
 }
 
 func (r *NamespaceSubroutine) Finalizers() []string { // coverage-ignore
-	return []string{"account.core.openmfp.io/finalizer"}
+	return []string{"account.core.openmfp.org/finalizer"}
 }
 
 func (r *NamespaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
