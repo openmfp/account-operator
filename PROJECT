@@ -12,7 +12,7 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: openmfp.io
+  domain: openmfp.org
   group: core
   kind: Account
   path: github.com/openmfp/account-operator/api/v1alpha1

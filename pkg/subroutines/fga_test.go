@@ -2,11 +2,12 @@ package subroutines_test
 
 import (
 	"context"
+	"testing"
+
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
@@ -46,10 +47,10 @@ func TestCreatorSubroutine_GetName(t *testing.T) {
 
 func TestCreatorSubroutine_Finalizers(t *testing.T) {
 	routine := subroutines.NewFGASubroutine(nil, nil, nil, "", "", "", "")
-	assert.Equal(t, []string{"account.core.openmfp.io/fga"}, routine.Finalizers())
+	assert.Equal(t, []string{"account.core.openmfp.org/fga"}, routine.Finalizers())
 }
 
-func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 
 	clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(
 		func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
@@ -79,7 +80,7 @@ func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8Servi
 						{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
+								APIVersion: "core.openmfp.org/v1alpha1",
 							},
 							SpecGoTemplate: apiextensionsv1.JSON{},
 						},
@@ -156,7 +157,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -206,7 +207,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -233,7 +234,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -260,7 +261,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -287,7 +288,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -313,7 +314,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -340,7 +341,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -369,7 +370,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -396,7 +397,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -433,7 +434,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -460,7 +461,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -485,7 +486,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -512,7 +513,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -601,7 +602,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -652,7 +653,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
 
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -679,7 +680,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -703,7 +704,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -730,7 +731,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -756,7 +757,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -783,7 +784,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},
@@ -812,7 +813,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
+				getStoreMocks(openFGAServiceClientMock, clientMock)
 
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					ns := o.(*corev1.Namespace)
@@ -839,7 +840,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								{
 									TypeMeta: metav1.TypeMeta{
 										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
+										APIVersion: "core.openmfp.org/v1alpha1",
 									},
 									SpecGoTemplate: apiextensionsv1.JSON{},
 								},

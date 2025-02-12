@@ -221,7 +221,7 @@ func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Accoun
 
 func (e *FGASubroutine) GetName() string { return "CreatorSubroutine" }
 
-func (e *FGASubroutine) Finalizers() []string { return []string{"account.core.openmfp.io/fga"} }
+func (e *FGASubroutine) Finalizers() []string { return []string{"account.core.openmfp.org/fga"} }
 
 var saRegex = regexp.MustCompile(`^system:serviceaccount:[^:]*:[^:]*$`)
 
