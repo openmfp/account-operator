@@ -1,0 +1,11 @@
+apiVersion: apis.kcp.io/v1alpha1
+kind: APIExport
+metadata:
+  creationTimestamp: null
+  name: core.openmfp.org
+spec:
+  latestResourceSchemas:
+  - v250212-34fb1bb.accounthierarchies.core.openmfp.org
+  - v250212-34fb1bb.accountlocations.core.openmfp.org
+  - v250212-34fb1bb.accounts.core.openmfp.org
+status: {}

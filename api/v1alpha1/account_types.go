@@ -76,6 +76,7 @@ type AccountStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:JSONPath=".spec.displayName",name="Display Name",type=string
 // +kubebuilder:printcolumn:JSONPath=".status.namespace",name="Account Namespace",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.type",name="Type",type=string

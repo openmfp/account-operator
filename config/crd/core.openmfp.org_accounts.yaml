@@ -12,7 +12,7 @@ spec:
     listKind: AccountList
     plural: accounts
     singular: account
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.displayName
