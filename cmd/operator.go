@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
@@ -97,10 +98,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
-	if cfg.Kcp.Enabled {
-		utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
-	}
-
+	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
 		CertDir: cfg.Webhooks.CertDir,
@@ -123,15 +121,11 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	}
 	var mgr ctrl.Manager
 	var err error
-	if cfg.Kcp.Enabled {
-		mgrConfig := rest.CopyConfig(restCfg)
-		if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
-			mgrConfig.Host = cfg.Kcp.VirtualWorkspaceUrl
-		}
-		mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
-	} else {
-		mgr, err = ctrl.NewManager(restCfg, opts)
+	mgrConfig := rest.CopyConfig(restCfg)
+	if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
+		mgrConfig.Host = cfg.Kcp.VirtualWorkspaceUrl
 	}
+	mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to start manager")
 	}
@@ -161,10 +155,10 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 }
 
 func initLog() *logger.Logger { // coverage-ignore
-	logcfg := logger.DefaultConfig()
-	logcfg.Level = loglevel
-	logcfg.NoJSON = logNoJson
-	log, err := logger.New(logcfg)
+	cfg := logger.DefaultConfig()
+	cfg.Level = loglevel
+	cfg.NoJSON = logNoJson
+	log, err := logger.New(cfg)
 	if err != nil {
 		setupLog.Error(err, "unable to create logger")
 		os.Exit(1)

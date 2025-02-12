@@ -30,7 +30,7 @@ type Config struct {
 		Enabled bool `envconfig:"default=false"`
 	}
 	Subroutines struct {
-		Namespace struct {
+		Workspace struct {
 			Enabled bool `envconfig:"default=true"`
 		}
 		FGA struct {
@@ -50,7 +50,6 @@ type Config struct {
 	}
 	MaxConcurrentReconciles int `envconfig:"default=10"`
 	Kcp                     struct {
-		Enabled             bool   `envconfig:"default=false"`
 		VirtualWorkspaceUrl string `envconfig:"optional"`
 	}
 }
