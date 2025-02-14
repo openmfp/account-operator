@@ -9,7 +9,7 @@ require (
 	github.com/kcp-dev/kcp/sdk v0.26.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
-	github.com/openmfp/golang-commons v0.134.0
+	github.com/openmfp/golang-commons v0.135.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
@@ -34,7 +34,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/getsentry/sentry-go v0.31.1 // indirect
