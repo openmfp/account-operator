@@ -1,0 +1,19 @@
+apiVersion: tenancy.kcp.io/v1alpha1
+kind: WorkspaceType
+metadata:
+  name: organizationfolder
+spec:
+  defaultAPIBindings:
+    - export: core.openmfp.org
+      path: root:openmfp-system
+  defaultChildWorkspaceType:
+    name: organization
+    path: root:openmfp-system
+  extend:
+    with:
+      - name: universal
+        path: root
+  limitAllowedChildren:
+    types:
+      - name: organization
+        path: root:openmfp-system
