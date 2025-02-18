@@ -30,6 +30,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/openmfp/golang-commons/logger"
+	"gopkg.in/yaml.v3"
 )
 
 // ListenAddr represents some listening address and port.
@@ -56,6 +59,7 @@ func (l *ListenAddr) HostPort() string {
 // some health-check URL.
 type HealthCheck struct {
 	url.URL
+	KubeconfigPath string
 
 	// HealthCheckPollInterval is the interval which will be used for polling the
 	// endpoint described by Host, Port, and Path.
@@ -147,12 +151,13 @@ func (ps *State) CheckFlag(flag string) (bool, error) {
 
 // Start starts the apiserver, waits for it to come up, and returns an error,
 // if occurred.
-func (ps *State) Start(stdout, stderr io.Writer) (err error) {
+func (ps *State) Start(stdout, stderr io.Writer, log *logger.Logger) (err error) {
 	if ps.ready {
 		return nil
 	}
 
 	ps.Cmd = exec.Command(ps.Path, ps.Args...)
+	ps.Cmd.Dir = ps.Dir
 	ps.Cmd.Stdout = stdout
 	ps.Cmd.Stderr = stderr
 	ps.Cmd.SysProcAttr = GetSysProcAttr()
@@ -160,7 +165,7 @@ func (ps *State) Start(stdout, stderr io.Writer) (err error) {
 	ready := make(chan bool)
 	timedOut := time.After(ps.StartTimeout)
 	pollerStopCh := make(stopChannel)
-	go pollURLUntilOK(ps.HealthCheck.URL, ps.HealthCheck.PollInterval, ready, pollerStopCh)
+	go pollURLUntilOK(ps.HealthCheck.URL, ps.HealthCheck.PollInterval, ps.HealthCheck.KubeconfigPath, ready, pollerStopCh, log)
 
 	ps.waitDone = make(chan struct{})
 
@@ -208,7 +213,7 @@ func (ps *State) Exited() (bool, error) {
 	return ps.exited, ps.exitErr
 }
 
-func pollURLUntilOK(url url.URL, interval time.Duration, ready chan bool, stopCh stopChannel) {
+func pollURLUntilOK(url url.URL, interval time.Duration, kubeconfigpath string, ready chan bool, stopCh stopChannel, log *logger.Logger) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -223,13 +228,29 @@ func pollURLUntilOK(url url.URL, interval time.Duration, ready chan bool, stopCh
 		interval = 100 * time.Millisecond
 	}
 	for {
-		res, err := client.Get(url.String())
+		token, err := readToken(kubeconfigpath)
+		req, err := http.NewRequest(http.MethodGet, url.String(), nil)
+		if err != nil {
+			continue
+		}
+		if token != "" {
+			req.Header.Add("Authorization", "Bearer "+token)
+		}
+		res, err := client.Do(req)
 		if err == nil {
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				fmt.Println("Error reading response body:", err)
+				return
+			}
 			res.Body.Close()
 			if res.StatusCode == http.StatusOK {
+				log.Info().Int("status", res.StatusCode).Msg("health check succeeded")
 				ready <- true
 				return
 			}
+			log.Info().Int("status", res.StatusCode).Str("token", token).Str("url", url.String()).Msg("health check failed")
+			log.Debug().Msg(string(body))
 		}
 
 		select {
@@ -239,6 +260,45 @@ func pollURLUntilOK(url url.URL, interval time.Duration, ready chan bool, stopCh
 			time.Sleep(interval)
 		}
 	}
+}
+
+type kubeconfig struct {
+	Users []struct {
+		Name string `yaml:"name"`
+		User struct {
+			Token string `yaml:"token"`
+		} `yaml:"user"`
+	}
+}
+
+func readToken(path string) (string, error) {
+	// check if file exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return "", fmt.Errorf("file %s does not exist", path)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return "", fmt.Errorf("error opening file %s: %w", path, err)
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return "", fmt.Errorf("error reading file %s: %w", path, err)
+	}
+
+	var config kubeconfig
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling yaml from file %s: %w", path, err)
+	}
+
+	for _, user := range config.Users {
+		if user.Name == "kcp-admin" {
+			return user.User.Token, nil
+		}
+	}
+	return "", nil
 }
 
 // Stop stops this process gracefully, waits for its termination, and cleans up
