@@ -85,4 +85,8 @@ tasks:
     cmds:
       - task: lint
       - task: test
+  start-kcp:
+    deps: [setup:kcp]
+    cmds:
+      - "{{ .LOCAL_BIN}}/kcp start"
 
