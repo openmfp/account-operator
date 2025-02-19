@@ -47,8 +47,8 @@ type AccountReconciler struct {
 
 func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
 	var subs []lifecycle.Subroutine
-	if cfg.Subroutines.Namespace.Enabled {
-		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
+	if cfg.Subroutines.Workspace.Enabled {
+		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
 	}
 	if cfg.Subroutines.Extension.Enabled {
 		subs = append(subs, subroutines.NewExtensionSubroutine(mgr.GetClient()))
@@ -88,8 +88,5 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config
 	if err != nil {
 		return err
 	}
-	if cfg.Kcp.Enabled {
-		return builder.Complete(kcp.WithClusterInContext(r))
-	}
-	return builder.Complete(r)
+	return builder.Complete(kcp.WithClusterInContext(r))
 }

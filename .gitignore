@@ -10,6 +10,7 @@ Dockerfile.cross
 .secret
 .env
 .taskenv
+.kcp/*
 
 # Test binary, built with `go test -c`
 *.test
@@ -30,3 +31,4 @@ go.work
 *.swo
 *~
 .DS_Store
+kcp.log

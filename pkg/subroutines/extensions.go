@@ -29,7 +29,7 @@ import (
 
 const (
 	ExtensionSubroutineName      = "ExtensionSubroutine"
-	ExtensionSubroutineFinalizer = "account.core.openmfp.io/ext"
+	ExtensionSubroutineFinalizer = "account.core.openmfp.org/ext"
 )
 
 type ExtensionSubroutine struct {

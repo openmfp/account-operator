@@ -27,7 +27,7 @@ type NamespaceSubroutineTestSuite struct {
 	suite.Suite
 
 	// Tested Object(s)
-	testObj *subroutines.NamespaceSubroutine
+	testObj *subroutines.WorkspaceSubroutine
 
 	// Mocks
 	clientMock *mocks.Client
@@ -38,7 +38,7 @@ func (suite *NamespaceSubroutineTestSuite) SetupTest() {
 	suite.clientMock = new(mocks.Client)
 
 	// Initialize Tested Object(s)
-	suite.testObj = subroutines.NewNamespaceSubroutine(suite.clientMock)
+	suite.testObj = subroutines.NewWorkspaceSubroutine(suite.clientMock)
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestGetName_OK() {

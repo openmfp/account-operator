@@ -6,14 +6,24 @@ vars:
   CONTROLLER_TOOLS_VERSION: v0.14.0
   ENVTEST_K8S_VERSION: "1.29.0"
   ENVTEST_VERSION: release-0.17
-  CRD_DIRECTORY: config/crd/bases
+  CRD_DIRECTORY: config/crd
+  TEST_SETUP_DIRECTORY: test/setup/openmfp-system
   KCP_APIGEN_VERSION: v0.21.0
+  KCP_VERSION: 0.26.1
+  GOARCH:
+    sh: go env GOARCH
+  GOOS:
+    sh: go env GOOS
 tasks:
   ## Setup
   setup:controller-gen:
     internal: true
     cmds:
       - test -s {{.LOCAL_BIN}}/controller-gen || GOBIN=$(pwd)/{{.LOCAL_BIN}} go install sigs.k8s.io/controller-tools/cmd/controller-gen@{{.CONTROLLER_TOOLS_VERSION}}
+  setup:kcp:
+    internal: true
+    cmds:
+      - test -s {{.LOCAL_BIN}}/kcp || GOBIN=$(pwd)/{{.LOCAL_BIN}} ./hack/download-tool.sh https://github.com/kcp-dev/kcp/releases/download/v{{ .KCP_VERSION }}/kcp_{{ .KCP_VERSION }}_{{ .GOOS }}_{{ .GOARCH }}.tar.gz kcp {{.KCP_VERSION}}
   setup:envtest:
     internal: true
     cmds:
@@ -36,7 +46,8 @@ tasks:
     cmds:
       - task: manifests
       - "{{.LOCAL_BIN}}/controller-gen object:headerFile=hack/boilerplate.go.txt paths=./..."
-      - "{{.LOCAL_BIN}}/apigen --input-dir ./config/crd/bases --output-dir ./config/resources"
+      - "{{.LOCAL_BIN}}/apigen --input-dir {{.CRD_DIRECTORY}} --output-dir ./config/resources"
+      - "{{.LOCAL_BIN}}/apigen --input-dir {{.CRD_DIRECTORY}} --output-dir {{ .TEST_SETUP_DIRECTORY }}"
   build:
     cmds:
       - go build ./...
@@ -76,4 +87,8 @@ tasks:
     cmds:
       - task: lint
       - task: test
+  start-kcp:
+    deps: [setup:kcp]
+    cmds:
+      - "{{ .LOCAL_BIN}}/kcp start"
 

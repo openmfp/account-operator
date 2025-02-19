@@ -26,8 +26,8 @@ type AccountType string
 const (
 	AccountTypeFolder                   AccountType = "folder"
 	AccountTypeAccount                  AccountType = "account"
-	NamespaceAccountOwnerLabel                      = "account.core.openmfp.io/owner"
-	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.io/owner-namespace"
+	NamespaceAccountOwnerLabel                      = "account.core.openmfp.org/owner"
+	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.org/owner-namespace"
 )
 
 // AccountSpec defines the desired state of Account
@@ -76,6 +76,7 @@ type AccountStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:JSONPath=".spec.displayName",name="Display Name",type=string
 // +kubebuilder:printcolumn:JSONPath=".status.namespace",name="Account Namespace",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.type",name="Type",type=string
