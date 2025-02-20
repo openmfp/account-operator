@@ -19,7 +19,7 @@ spec:
       name: Display Name
       type: string
     - jsonPath: .status.namespace
-      name: Account Namespace
+      name: Account Workspace
       type: string
     - jsonPath: .spec.type
       name: Type
@@ -98,9 +98,6 @@ spec:
                   - specGoTemplate
                   type: object
                 type: array
-              namespace:
-                description: Namespace is the account should take ownership of
-                type: string
               type:
                 description: Type specifies the intended type for this Account object.
                 enum:
@@ -183,8 +180,6 @@ spec:
                   - type
                   type: object
                 type: array
-              namespace:
-                type: string
               nextReconcileTime:
                 format: date-time
                 type: string

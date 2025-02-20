@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250212-34fb1bb.accounts.core.openmfp.org
+  name: v250220-4ad7b5a.accounts.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
@@ -17,7 +17,7 @@ spec:
       name: Display Name
       type: string
     - jsonPath: .status.namespace
-      name: Account Namespace
+      name: Account Workspace
       type: string
     - jsonPath: .spec.type
       name: Type
@@ -94,9 +94,6 @@ spec:
                 - specGoTemplate
                 type: object
               type: array
-            namespace:
-              description: Namespace is the account should take ownership of
-              type: string
             type:
               description: Type specifies the intended type for this Account object.
               enum:
@@ -179,8 +176,6 @@ spec:
                 - type
                 type: object
               type: array
-            namespace:
-              type: string
             nextReconcileTime:
               format: date-time
               type: string

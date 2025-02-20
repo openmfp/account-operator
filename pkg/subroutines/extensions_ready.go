@@ -65,7 +65,7 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 			us.SetName(strings.ToLower(extension.Kind))
 		}
 		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Namespace)
+			us.SetNamespace(*account.Status.Workspace)
 		}
 
 		err = e.client.Get(ctx, client.ObjectKeyFromObject(&us), &us)
