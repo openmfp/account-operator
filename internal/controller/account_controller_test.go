@@ -3,14 +3,17 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -20,6 +23,7 @@ import (
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
+	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/testing/kcpenvtest"
 )
 
@@ -44,10 +48,10 @@ func (suite *AccountTestSuite) SetupSuite() {
 	logConfig.NoJSON = true
 	logConfig.Name = "AccountTestSuite"
 	logConfig.Level = "debug"
-	// Disable color logging as vs-code does not support color logging in the test output
-	//logConfig.Output = &zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}
+
 	log, err := logger.New(logConfig)
 	suite.Require().NoError(err)
+	ctrl.SetLogger(log.Logr())
 
 	cfg, err := config.NewFromEnv()
 	suite.Require().NoError(err)
@@ -56,9 +60,20 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.cancel = cancel
 
 	testEnvLogger := log.ComponentLogger("kcpenvtest")
+
 	suite.testEnv = kcpenvtest.NewEnvironment("core.openmfp.org", "openmfp-system", "../../", "bin", "test/setup", testEnvLogger)
 
-	k8sCfg, vsUrl, err := suite.testEnv.Start()
+	var k8sCfg *rest.Config
+	var vsUrl string
+	useExistingCluster := true
+	if envValue, err := strconv.ParseBool(os.Getenv("USE_EXISTING_CLUSTER")); err != nil {
+		useExistingCluster = envValue
+	}
+	k8sCfg, vsUrl, err = suite.testEnv.Start(useExistingCluster)
+	if err != nil {
+		err = suite.testEnv.Stop(useExistingCluster)
+		suite.Require().NoError(err)
+	}
 	suite.Require().NoError(err)
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme.Scheme))
@@ -67,15 +82,14 @@ func (suite *AccountTestSuite) SetupSuite() {
 	managerCfg := rest.CopyConfig(k8sCfg)
 	managerCfg.Host = vsUrl
 
-	testDataClient := rest.CopyConfig(k8sCfg)
-	managerCfg.Host = fmt.Sprintf("%s:%s", k8sCfg.Host, "openmfp:organizations:root-org")
+	testDataConfig := rest.CopyConfig(k8sCfg)
+	testDataConfig.Host = fmt.Sprintf("%s:%s", k8sCfg.Host, "openmfp:organizations:root-org")
 
 	// +kubebuilder:scaffold:scheme
-	suite.kubernetesClient, err = client.New(testDataClient, client.Options{
+	suite.kubernetesClient, err = client.New(testDataConfig, client.Options{
 		Scheme: scheme.Scheme,
 	})
 	suite.Require().NoError(err)
-	ctrl.SetLogger(log.Logr())
 
 	suite.kubernetesManager, err = kcp.NewClusterAwareManager(managerCfg, ctrl.Options{
 		Scheme:      scheme.Scheme,
@@ -93,7 +107,11 @@ func (suite *AccountTestSuite) SetupSuite() {
 
 func (suite *AccountTestSuite) TearDownSuite() {
 	suite.cancel(fmt.Errorf("tearing down test suite"))
-	err := suite.testEnv.Stop()
+	useExistingCluster := true
+	if envValue, err := strconv.ParseBool(os.Getenv("USE_EXISTING_CLUSTER")); err != nil {
+		useExistingCluster = envValue
+	}
+	err := suite.testEnv.Stop(useExistingCluster)
 	suite.Nil(err)
 }
 
@@ -103,40 +121,34 @@ func (suite *AccountTestSuite) startController(ctx context.Context) {
 }
 
 func (suite *AccountTestSuite) TestAddingFinalizer() {
-	assert.True(suite.T(), true)
+	// Given
+	testContext := context.Background()
+	accountName := "test-account-finalizer"
 
+	account := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: accountName,
+		},
+		Spec: corev1alpha1.AccountSpec{
+			Type: corev1alpha1.AccountTypeFolder,
+		}}
+
+	// When
+	err := suite.kubernetesClient.Create(testContext, account)
+	suite.Nil(err)
+
+	// Then
+	createdAccount := corev1alpha1.Account{}
+	suite.Assert().Eventually(func() bool {
+		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
+			Name:      accountName,
+			Namespace: defaultNamespace,
+		}, &createdAccount)
+		return err == nil && createdAccount.Finalizers != nil
+	}, defaultTestTimeout, defaultTickInterval)
+
+	suite.Equal([]string{subroutines.WorkspaceSubroutineFinalizer, subroutines.ExtensionSubroutineFinalizer, "account.core.openmfp.org/fga"}, createdAccount.ObjectMeta.Finalizers)
 }
-
-//func (suite *AccountTestSuite) TestAddingFinalizer() {
-//	// Given
-//	testContext := context.Background()
-//	accountName := "test-account-finalizer"
-//
-//	account := &corev1alpha1.Account{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      accountName,
-//			Namespace: defaultNamespace,
-//		},
-//		Spec: corev1alpha1.AccountSpec{
-//			Type: corev1alpha1.AccountTypeFolder,
-//		}}
-//
-//	// When
-//	err := suite.kubernetesClient.Create(testContext, account)
-//	suite.Nil(err)
-//
-//	// Then
-//	createdAccount := corev1alpha1.Account{}
-//	suite.Assert().Eventually(func() bool {
-//		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
-//			Name:      accountName,
-//			Namespace: defaultNamespace,
-//		}, &createdAccount)
-//		return err == nil && createdAccount.Finalizers != nil
-//	}, defaultTestTimeout, defaultTickInterval)
-//
-//	suite.Equal(createdAccount.ObjectMeta.Finalizers, []string{subroutines.NamespaceSubroutineFinalizer, subroutines.ExtensionSubroutineFinalizer, "account.core.openmfp.io/fga"})
-//}
 
 //func (suite *AccountTestSuite) TestNamespaceCreation() {
 //	// Given

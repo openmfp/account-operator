@@ -1,4 +1,4 @@
-apiVersion: core.openmfp.io/v1alpha1
+apiVersion: core.openmfp.org/v1alpha1
 kind: Account
 metadata:
   name: new-account-debug1
@@ -8,7 +8,7 @@ spec:
   displayName: New Demo Account
   creator: test.user@example.com
   extensions:
-  - apiVersion: core.openmfp.io/v1alpha1
+  - apiVersion: core.openmfp.org/v1alpha1
     kind: AccountExtension
     specGoTemplate:
       foo: bar

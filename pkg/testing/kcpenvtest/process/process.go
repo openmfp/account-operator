@@ -18,6 +18,7 @@ package process
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
@@ -26,6 +27,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sync"
 	"syscall"
@@ -59,7 +61,7 @@ func (l *ListenAddr) HostPort() string {
 // some health-check URL.
 type HealthCheck struct {
 	url.URL
-	KubeconfigPath string
+	KcpAssetPath string
 
 	// HealthCheckPollInterval is the interval which will be used for polling the
 	// endpoint described by Host, Port, and Path.
@@ -165,7 +167,7 @@ func (ps *State) Start(stdout, stderr io.Writer, log *logger.Logger) (err error)
 	ready := make(chan bool)
 	timedOut := time.After(ps.StartTimeout)
 	pollerStopCh := make(stopChannel)
-	go pollURLUntilOK(ps.HealthCheck.URL, ps.HealthCheck.PollInterval, ps.HealthCheck.KubeconfigPath, ready, pollerStopCh, log)
+	go pollURLUntilOK(ps.HealthCheck.URL, ps.HealthCheck.PollInterval, ps.HealthCheck.KcpAssetPath, ready, pollerStopCh, log)
 
 	ps.waitDone = make(chan struct{})
 
@@ -213,44 +215,50 @@ func (ps *State) Exited() (bool, error) {
 	return ps.exited, ps.exitErr
 }
 
-func pollURLUntilOK(url url.URL, interval time.Duration, kubeconfigpath string, ready chan bool, stopCh stopChannel, log *logger.Logger) {
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				// there's probably certs *somewhere*,
-				// but it's fine to just skip validating
-				// them for health checks during testing
-				InsecureSkipVerify: true, //nolint:gosec
-			},
-		},
-	}
+func pollURLUntilOK(url url.URL, interval time.Duration, kcpAssetPath string, ready chan bool, stopCh stopChannel, log *logger.Logger) {
+
 	if interval <= 0 {
-		interval = 100 * time.Millisecond
+		interval = 3000 * time.Millisecond
 	}
 	for {
-		token, err := readToken(kubeconfigpath)
+		token, ca, err := readTokenAndCA(kcpAssetPath)
+		if err != nil {
+			log.Info().Msg("health check failed. Credentials not ready")
+			time.Sleep(interval)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(ca)
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
 		req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 		if err != nil {
-			continue
+			log.Fatal().Err(err).Msg("error creating request")
 		}
 		if token != "" {
 			req.Header.Add("Authorization", "Bearer "+token)
 		}
 		res, err := client.Do(req)
 		if err == nil {
-			body, err := io.ReadAll(res.Body)
 			if err != nil {
 				fmt.Println("Error reading response body:", err)
 				return
 			}
-			res.Body.Close()
+			err := res.Body.Close()
+			if err != nil {
+				fmt.Println("Error closing response body:", err)
+				return
+			}
 			if res.StatusCode == http.StatusOK {
-				log.Info().Int("status", res.StatusCode).Msg("health check succeeded")
+				log.Info().Int("status", res.StatusCode).Msg("KCP Ready (health check succeeded)")
 				ready <- true
 				return
 			}
-			log.Info().Int("status", res.StatusCode).Str("token", token).Str("url", url.String()).Msg("health check failed")
-			log.Debug().Msg(string(body))
+			log.Info().Int("status", res.StatusCode).Msg("Waiting for KCP to get ready (health check failed)")
 		}
 
 		select {
@@ -271,34 +279,55 @@ type kubeconfig struct {
 	}
 }
 
-func readToken(path string) (string, error) {
+func readTokenAndCA(path string) (string, []byte, error) {
+	adminKubeconfigPath := filepath.Join(path, "admin.kubeconfig")
 	// check if file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", fmt.Errorf("file %s does not exist", path)
+	if _, err := os.Stat(adminKubeconfigPath); os.IsNotExist(err) {
+		return "", nil, fmt.Errorf("file %s does not exist", adminKubeconfigPath)
 	}
-	file, err := os.Open(path)
+	file, err := os.Open(adminKubeconfigPath)
 	if err != nil {
-		return "", fmt.Errorf("error opening file %s: %w", path, err)
+		return "", nil, fmt.Errorf("error opening file %s: %w", path, err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return "", fmt.Errorf("error reading file %s: %w", path, err)
+		return "", nil, fmt.Errorf("error reading file %s: %w", path, err)
 	}
 
 	var config kubeconfig
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		return "", fmt.Errorf("error unmarshalling yaml from file %s: %w", path, err)
+		return "", nil, fmt.Errorf("error unmarshalling yaml from file %s: %w", path, err)
 	}
 
+	var userToken string
 	for _, user := range config.Users {
 		if user.Name == "kcp-admin" {
-			return user.User.Token, nil
+			userToken = user.User.Token
 		}
 	}
-	return "", nil
+	if userToken == "" {
+		return "", nil, fmt.Errorf("token not found in kubeconfig file %s", path)
+	}
+
+	certPath := filepath.Join(path, "apiserver.crt")
+	if _, err := os.Stat(certPath); os.IsNotExist(err) {
+		return "", nil, fmt.Errorf("file %s does not exist", certPath)
+	}
+	file, err = os.Open(certPath)
+	if err != nil {
+		return "", nil, fmt.Errorf("error opening file %s: %w", path, err)
+	}
+	defer file.Close() //nolint:errcheck
+
+	data, err = io.ReadAll(file)
+	if err != nil {
+		return "", nil, fmt.Errorf("error reading file %s: %w", path, err)
+	}
+
+	return userToken, data, nil
 }
 
 // Stop stops this process gracefully, waits for its termination, and cleans up
