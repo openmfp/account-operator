@@ -2,6 +2,7 @@ package kcpenvtest
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/openmfp/golang-commons/logger"
+	"github.com/otiai10/copy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,8 +30,8 @@ import (
 const (
 	kcpEnvStartTimeout        = "KCP_SERVER_START_TIMEOUT"
 	kcpEnvStopTimeout         = "KCP_SERVER_STOP_TIMEOUT"
-	defaulKCPServerTimeout    = 20 * time.Second
-	defaultKCPServerTimeout   = 20 * time.Second
+	defaulKCPServerTimeout    = 20 * time.Minute
+	defaultKCPServerTimeout   = 20 * time.Minute
 	kcpAdminKubeconfigPath    = ".kcp/admin.kubeconfig"
 	kcpRootNamespaceServerUrl = "https://localhost:6443/clusters/root"
 	dirOrderPattern           = `^[0-9]*-(.*)$`
@@ -73,19 +75,25 @@ func NewEnvironment(apiExportName string, providerWorkspaceName string, pathToRo
 	}
 }
 
-func (te *Environment) Start() (*rest.Config, string, error) {
-	// ensure clean .kcp directory
-	te.cleanDir()
+func (te *Environment) Start(useExsiting bool) (*rest.Config, string, error) {
 
-	if err := te.defaultTimeouts(); err != nil {
-		return nil, "", fmt.Errorf("failed to default controlplane timeouts: %w", err)
-	}
-	//te.kcpServer.StartTimeout = te.ControlPlaneStartTimeout
-	//te.kcpServer.StopTimeout = te.ControlPlaneStopTimeout
+	if !useExsiting {
+		// ensure clean .kcp directory
+		err := te.cleanDir()
+		if err != nil {
+			return nil, "", err
+		}
 
-	te.log.Info().Msg("starting control plane")
-	if err := te.kcpServer.Start(); err != nil {
-		return nil, "", fmt.Errorf("unable to start control plane itself: %w", err)
+		if err := te.defaultTimeouts(); err != nil {
+			return nil, "", fmt.Errorf("failed to default controlplane timeouts: %w", err)
+		}
+		//te.kcpServer.StartTimeout = te.ControlPlaneStartTimeout
+		//te.kcpServer.StopTimeout = te.ControlPlaneStopTimeout
+
+		te.log.Info().Msg("starting control plane")
+		if err := te.kcpServer.Start(); err != nil {
+			return nil, "", fmt.Errorf("unable to start control plane itself: %w", err)
+		}
 	}
 
 	if te.Scheme == nil {
@@ -104,14 +112,12 @@ func (te *Environment) Start() (*rest.Config, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	te.Config.Host = kcpRootNamespaceServerUrl
-	te.Config.QPS = 1000.0
-	te.Config.Burst = 2000.0
+
 	if te.RelativeSetupDirectory != "" {
 		// Apply all yaml files in the setup directory
 		setupDirectory := filepath.Join(te.PathToRoot, te.RelativeSetupDirectory)
 		kubeconfigPath := filepath.Join(te.PathToRoot, kcpAdminKubeconfigPath)
-		err := te.ApplyYAML(kubeconfigPath, te.Config, setupDirectory, kcpRootNamespaceServerUrl)
+		err := te.ApplySetup(kubeconfigPath, te.Config, setupDirectory, kcpRootNamespaceServerUrl)
 		if err != nil {
 			return nil, "", err
 		}
@@ -134,12 +140,20 @@ func (te *Environment) Start() (*rest.Config, string, error) {
 	if len(apiExport.Status.VirtualWorkspaces) == 0 {
 		return nil, "", fmt.Errorf("no virtual workspaces found")
 	}
+
+	te.Config.Host = kcpRootNamespaceServerUrl
+	te.Config.QPS = 1000.0
+	te.Config.Burst = 2000.0
+
 	return te.Config, apiExport.Status.VirtualWorkspaces[0].URL, nil
 }
 
-func (te *Environment) Stop() error {
-	defer te.cleanDir()
-	return te.kcpServer.Stop()
+func (te *Environment) Stop(useExistingCluster bool) error {
+	if !useExistingCluster {
+		defer te.cleanDir() //nolint:errcheck
+		return te.kcpServer.Stop()
+	}
+	return nil
 }
 
 func (te *Environment) cleanDir() error {
@@ -168,14 +182,16 @@ func (te *Environment) waitForDefaultNamespace() error {
 	})
 }
 
-func (te *Environment) waitForWorkspace(client client.Client, name string) error {
+func (te *Environment) waitForWorkspace(client client.Client, name string, log *logger.Logger) error {
 	// It shouldn't take longer than 5s for the default namespace to be brought up in etcd
-	return wait.PollUntilContextTimeout(context.TODO(), time.Millisecond*50, time.Second*5, true, func(ctx context.Context) (bool, error) {
+	return wait.PollUntilContextTimeout(context.TODO(), time.Millisecond*500, time.Second*15, true, func(ctx context.Context) (bool, error) {
 		ws := &kcptenancyv1alpha.Workspace{}
 		if err := client.Get(ctx, types.NamespacedName{Name: name}, ws); err != nil {
 			return false, nil //nolint:nilerr
 		}
-		return ws.Status.Phase == "Ready", nil
+		ready := ws.Status.Phase == "Ready"
+		log.Info().Str("workspace", name).Bool("ready", ready).Msg("waiting for workspace to be ready")
+		return ready, nil
 	})
 }
 
@@ -205,17 +221,45 @@ func (te *Environment) defaultTimeouts() error {
 	return nil
 }
 
-func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, dir string, serverUrl string) error {
-	cs, err := client.New(config, client.Options{})
-	if err != nil {
-		return fmt.Errorf("unable to create client: %w", err)
-	}
+type TemplateParameters struct {
+	ApiExportRootTenancyKcpIoIdentityHash  string `json:"apiExportRootTenancyKcpIoIdentityHash"`
+	ApiExportRootTopologyKcpIoIdentityHash string `json:"apiExportRootTopologyKcpIoIdentityHash"`
+	ApiExportRootShardsKcpIoIdentityHash   string `json:"apiExportRootShardsKcpIoIdentityHash"`
+}
 
-	// list directory
-	err = te.runKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", dir))
+func (te *Environment) ApplySetup(pathToRootConfig string, config *rest.Config, setupDirectoryPath string, serverUrl string) error {
+
+	dataFile := filepath.Join(te.PathToRoot, ".kcp/data.json")
+
+	err := generateTemplateDataFile(config, dataFile)
 	if err != nil {
 		return err
 	}
+
+	// Copy setup dir
+	tmpSetupDir := filepath.Join(te.PathToRoot, ".kcp/setup")
+	err = os.Mkdir(tmpSetupDir, 0755)
+	if err != nil {
+		return err
+	}
+	err = copy.Copy(setupDirectoryPath, tmpSetupDir)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpSetupDir) //nolint:errcheck
+
+	// Apply Gomplate recursively
+	err = applyTemplate(te.PathToRoot, tmpSetupDir, dataFile)
+	if err != nil {
+		return err
+	}
+
+	return te.ApplyYAML(pathToRootConfig, config, tmpSetupDir, serverUrl)
+
+}
+
+func applyTemplate(pathToRoot string, dir string, dataFile string) error {
+	gomplateBinary := filepath.Join(pathToRoot, "bin", "gomplate")
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -223,23 +267,101 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, d
 
 	for _, file := range files {
 		if file.IsDir() {
+			err := applyTemplate(pathToRoot, filepath.Join(dir, file.Name()), dataFile)
+			if err != nil {
+				return err
+			}
+		} else {
+			if strings.HasSuffix(file.Name(), ".yaml") {
+				filePath := filepath.Join(dir, file.Name())
+				gomplateCmd := exec.Command(gomplateBinary, "-f", filePath, "-c", "data="+dataFile, "-o", filePath)
+				gomplateCmd.Stdout = os.Stdout
+				gomplateCmd.Stderr = os.Stderr
+				if err := gomplateCmd.Run(); err != nil {
+					return err
+				}
+
+			}
+		}
+	}
+	return nil
+
+}
+
+func generateTemplateDataFile(config *rest.Config, dataFile string) error {
+	// Collect Variables
+	cs, err := client.New(config, client.Options{})
+	if err != nil {
+		return fmt.Errorf("unable to create client: %w", err)
+	}
+
+	parameters := TemplateParameters{}
+	apiExport := kcpapiv1alpha.APIExport{}
+	err = cs.Get(context.Background(), types.NamespacedName{Name: "tenancy.kcp.io"}, &apiExport)
+	if err != nil {
+		return err
+	}
+	parameters.ApiExportRootTenancyKcpIoIdentityHash = apiExport.Status.IdentityHash
+
+	err = cs.Get(context.Background(), types.NamespacedName{Name: "shards.core.kcp.io"}, &apiExport)
+	if err != nil {
+		return err
+	}
+	parameters.ApiExportRootShardsKcpIoIdentityHash = apiExport.Status.IdentityHash
+
+	err = cs.Get(context.Background(), types.NamespacedName{Name: "topology.kcp.io"}, &apiExport)
+	if err != nil {
+		return err
+	}
+	parameters.ApiExportRootTopologyKcpIoIdentityHash = apiExport.Status.IdentityHash
+
+	bytes, err := json.Marshal(parameters)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(dataFile, bytes, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, pathToSetupDir string, serverUrl string) error {
+	cs, err := client.New(config, client.Options{})
+	if err != nil {
+		return fmt.Errorf("unable to create client: %w", err)
+	}
+
+	// list directory
+	err = te.runTemplatedKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", pathToSetupDir))
+	if err != nil {
+		return err
+	}
+	files, err := os.ReadDir(pathToSetupDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
 			fileName := file.Name()
-			// check if dir starts with `[0-9]*-`
+			// check if pathToSetupDir starts with `[0-9]*-`
 			re := regexp.MustCompile(dirOrderPattern)
 
 			if re.Match([]byte(fileName)) {
 				match := re.FindStringSubmatch(fileName)
 				fileName = match[1]
 			}
-			err := te.waitForWorkspace(cs, fileName)
+			err := te.waitForWorkspace(cs, fileName, te.log)
 			if err != nil {
 				return err
 			}
 			newServerUrl := fmt.Sprintf("%s:%s", serverUrl, fileName)
 			wsConfig := rest.CopyConfig(config)
 			wsConfig.Host = newServerUrl
-			dir := filepath.Join(dir, file.Name())
-			err = te.ApplyYAML(pathToRootConfig, wsConfig, dir, newServerUrl)
+			subDir := filepath.Join(pathToSetupDir, file.Name())
+			err = te.ApplyYAML(pathToRootConfig, wsConfig, subDir, newServerUrl)
 			if err != nil {
 				return err
 			}
@@ -248,7 +370,7 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, d
 	return nil
 }
 
-func (te *Environment) runKubectlCommand(kubeconfig string, server string, command string) error {
+func (te *Environment) runTemplatedKubectlCommand(kubeconfig string, server string, command string) error {
 	splitCommand := strings.Split(command, " ")
 	args := []string{fmt.Sprintf("--kubeconfig=%s", kubeconfig), fmt.Sprintf("--server=%s", server)}
 	args = append(args, splitCommand...)

@@ -71,16 +71,19 @@ func (s *KCPServer) prepare() error {
 func (s *KCPServer) setProcessState() error {
 	var err error
 
-	url, err := url.Parse("https://localhost:6443/clusters/root/apis/tenancy.kcp.io/v1alpha1/workspaces")
+	healthUrl, err := url.Parse("https://localhost:6443/clusters/root/apis/tenancy.kcp.io/v1alpha1/workspaces")
+	if err != nil {
+		return err
+	}
 	s.processState = &process.State{
 		Dir:          s.Dir,
 		Path:         s.Binary,
 		StartTimeout: s.StartTimeout,
 		StopTimeout:  s.StopTimeout,
 		HealthCheck: process.HealthCheck{
-			URL:            *url,
-			PollInterval:   2 * time.Second,
-			KubeconfigPath: filepath.Join(s.PathToRoot, ".kcp/admin.kubeconfig"),
+			URL:          *healthUrl,
+			PollInterval: 2 * time.Second,
+			KcpAssetPath: filepath.Join(s.PathToRoot, ".kcp"),
 		},
 	}
 	if err := s.processState.Init("kcp"); err != nil {

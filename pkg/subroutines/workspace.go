@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	NamespaceSubroutineName      = "WorkspaceSubroutine"
-	NamespaceSubroutineFinalizer = "account.core.openmfp.org/finalizer"
-	NamespaceNamePrefix          = "account-"
+	WorkspaceSubroutineName      = "WorkspaceSubroutine"
+	WorkspaceSubroutineFinalizer = "account.core.openmfp.org/finalizer"
 )
 
 type WorkspaceSubroutine struct {
@@ -24,7 +23,7 @@ func NewWorkspaceSubroutine(client client.Client) *WorkspaceSubroutine {
 }
 
 func (r *WorkspaceSubroutine) GetName() string {
-	return NamespaceSubroutineName
+	return WorkspaceSubroutineName
 }
 
 func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {

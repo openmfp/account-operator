@@ -46,7 +46,7 @@ func (suite *NamespaceSubroutineTestSuite) TestGetName_OK() {
 	result := suite.testObj.GetName()
 
 	// Then
-	suite.Equal(subroutines.NamespaceSubroutineName, result)
+	suite.Equal(subroutines.WorkspaceSubroutineName, result)
 }
 
 func (suite *NamespaceSubroutineTestSuite) TestFinalize_OK() {
