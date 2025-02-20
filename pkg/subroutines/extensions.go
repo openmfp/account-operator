@@ -75,7 +75,7 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 			us.SetName(strings.ToLower(extension.Kind))
 		}
 		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Namespace)
+			us.SetNamespace(*account.Status.Workspace)
 		}
 
 		_, err = controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
@@ -175,7 +175,7 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 			us.SetName(strings.ToLower(extension.Kind))
 		}
 		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Namespace)
+			us.SetNamespace(*account.Status.Workspace)
 		}
 
 		log.Info().

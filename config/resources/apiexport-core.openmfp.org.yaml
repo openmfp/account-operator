@@ -6,5 +6,5 @@ metadata:
 spec:
   latestResourceSchemas:
   - v250212-34fb1bb.accountlocations.core.openmfp.org
-  - v250212-34fb1bb.accounts.core.openmfp.org
+  - v250220-4ad7b5a.accounts.core.openmfp.org
 status: {}

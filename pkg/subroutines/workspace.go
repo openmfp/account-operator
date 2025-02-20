@@ -29,12 +29,12 @@ func (r *WorkspaceSubroutine) GetName() string {
 func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	//instance := runtimeObj.(*corev1alpha1.Account)
 	//
-	//if instance.Status.Namespace == nil {
+	//if instance.Status.Workspace == nil {
 	//	return ctrl.Result{}, nil
 	//}
 	//
-	//ns := v1.Namespace{}
-	//err := r.client.Get(ctx, client.ObjectKey{Name: *instance.Status.Namespace}, &ns)
+	//ns := v1.Workspace{}
+	//err := r.client.Get(ctx, client.ObjectKey{Name: *instance.Status.Workspace}, &ns)
 	//if kerrors.IsNotFound(err) {
 	//	return ctrl.Result{}, nil
 	//}
@@ -63,8 +63,8 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	//instance := runtimeObj.(*corev1alpha1.Account)
 	//
 	//// Test if namespace was already created based on status
-	//createdNamespace := &v1.Namespace{}
-	//if instance.Status.Namespace != nil {
+	//createdNamespace := &v1.Workspace{}
+	//if instance.Status.Workspace != nil {
 	//	createdNamespace = generateNamespace(instance)
 	//	_, err := controllerutil.CreateOrUpdate(ctx, r.client, createdNamespace, func() error {
 	//		return setNamespaceLabels(createdNamespace, instance)
@@ -73,8 +73,8 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	//		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	//	}
 	//} else {
-	//	if instance.Spec.Namespace != nil {
-	//		createdNamespace = &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: *instance.Spec.Namespace}}
+	//	if instance.Spec.Workspace != nil {
+	//		createdNamespace = &v1.Workspace{ObjectMeta: metav1.ObjectMeta{Name: *instance.Spec.Workspace}}
 	//		_, err := controllerutil.CreateOrUpdate(ctx, r.client, createdNamespace, func() error {
 	//			return setNamespaceLabels(createdNamespace, instance)
 	//		})
@@ -82,7 +82,7 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	//			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	//		}
 	//	} else {
-	//		// Create New Namespace
+	//		// Create New Workspace
 	//		createdNamespace = generateNamespace(instance)
 	//		err := r.client.Create(ctx, createdNamespace)
 	//		if err != nil {
@@ -91,15 +91,15 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 	//	}
 	//}
 	//
-	//instance.Status.Namespace = &createdNamespace.Name
+	//instance.Status.Workspace = &createdNamespace.Name
 	return ctrl.Result{}, nil
 }
 
 //
-//var NamespaceOwnedByAnotherAccountErr = errors.New("Namespace already owned by another account")
-//var NamespaceOwnedByAnAccountInAnotherNamespaceErr = errors.New("Namespace already owned by another account in another namespace")
+//var NamespaceOwnedByAnotherAccountErr = errors.New("Workspace already owned by another account")
+//var NamespaceOwnedByAnAccountInAnotherNamespaceErr = errors.New("Workspace already owned by another account in another namespace")
 //
-//func setNamespaceLabels(ns *v1.Namespace, instance *corev1alpha1.Account) error {
+//func setNamespaceLabels(ns *v1.Workspace, instance *corev1alpha1.Account) error {
 //	accountOwner, hasOwnerLabel := ns.Labels[corev1alpha1.NamespaceAccountOwnerLabel]
 //	accountOwnerNamespace, hasOwnerNamespaceLabel := ns.Labels[corev1alpha1.NamespaceAccountOwnerNamespaceLabel]
 //
@@ -122,8 +122,8 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 //	return nil
 //}
 //
-//func generateNamespace(instance *corev1alpha1.Account) *v1.Namespace {
-//	ns := &v1.Namespace{
+//func generateNamespace(instance *corev1alpha1.Account) *v1.Workspace {
+//	ns := &v1.Workspace{
 //		ObjectMeta: metav1.ObjectMeta{
 //			Labels: map[string]string{
 //				corev1alpha1.NamespaceAccountOwnerLabel:          instance.GetName(),
@@ -132,8 +132,8 @@ func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.
 //		},
 //	}
 //
-//	if instance.Status.Namespace != nil {
-//		ns.Name = *instance.Status.Namespace
+//	if instance.Status.Workspace != nil {
+//		ns.Name = *instance.Status.Workspace
 //	} else {
 //		ns.ObjectMeta.GenerateName = NamespaceNamePrefix
 //	}

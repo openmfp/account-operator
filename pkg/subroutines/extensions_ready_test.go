@@ -44,7 +44,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		{
 			name: "should respect ready condition and return successfully",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					us := o.(*unstructured.Unstructured)
 
@@ -93,14 +93,14 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 		},
 		{
 			name: "should respect ready condition and requeue in case the extension is not found",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(kerrors.NewNotFound(schema.GroupResource{}, "AccountExtension"))
 
 				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
@@ -118,7 +118,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 			expectError:    false,
@@ -127,7 +127,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		{
 			name: "should respect ready condition and requeue in case the extension is not yet ready",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					us := o.(*unstructured.Unstructured)
 
@@ -167,7 +167,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 			expectError:    false,
@@ -191,7 +191,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 			expectError: true,
@@ -199,7 +199,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		{
 			name: "should respect ready condition and fail in case the extension retrieval failed",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(errors.New("some error"))
 			},
@@ -216,7 +216,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 			expectError: true,
@@ -224,7 +224,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		{
 			name: "should respect ready condition and fail for wrong format",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 				c.EXPECT().IsObjectNamespaced(mock.Anything).Return(true, nil)
 				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					us := o.(*unstructured.Unstructured)
@@ -249,7 +249,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 			expectError: true,
@@ -257,7 +257,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 		{
 			name: "should skip processing of subroutine for extension if no readyConditionType is procided",
 			k8sMocks: func(c *mocks.Client) {
-				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Namespace"))
+				c.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Once().Return(kerrors.NewNotFound(schema.GroupResource{}, "Workspace"))
 			},
 			account: v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
@@ -271,7 +271,7 @@ func TestExtensionReadySubroutine(t *testing.T) {
 					},
 				},
 				Status: v1alpha1.AccountStatus{
-					Namespace: &defaultNamespace,
+					Workspace: &defaultNamespace,
 				},
 			},
 		},

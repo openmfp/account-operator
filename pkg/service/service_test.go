@@ -260,7 +260,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 						Type: v1alpha1.AccountTypeFolder,
 					},
 					Status: v1alpha1.AccountStatus{
-						Namespace: pointer.To("sub-namespace"),
+						Workspace: pointer.To("sub-namespace"),
 					},
 				},
 				&corev1.Namespace{
@@ -300,7 +300,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 						Type: v1alpha1.AccountTypeFolder,
 					},
 					Status: v1alpha1.AccountStatus{
-						Namespace: pointer.To("sub-namespace"),
+						Workspace: pointer.To("sub-namespace"),
 					},
 				},
 				&corev1.Namespace{
