@@ -6,17 +6,16 @@ metadata:
 spec:
   latestResourceSchemas:
   - v250218-aee593a.accountlocations.core.openmfp.org
-  - v250218-aee593a.accounts.core.openmfp.org
+  - v250220-cdcd05c.accounts.core.openmfp.org
   permissionClaims:
-    - all: true
-      group: ""
-      resource: namespaces
-    - all: true
-      group: tenancy.kcp.io
-      identityHash: {{ .data.apiExportRootTenancyKcpIoIdentityHash }}
-      resource: workspaces
-    - all: true
-      group: tenancy.kcp.io
-      identityHash: {{ .data.apiExportRootTenancyKcpIoIdentityHash }}
-      resource: workspacetypes
+  - all: true
+    resource: namespaces
+  - all: true
+    group: tenancy.kcp.io
+    identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
+    resource: workspaces
+  - all: true
+    group: tenancy.kcp.io
+    identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
+    resource: workspacetypes
 status: {}

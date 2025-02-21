@@ -55,23 +55,23 @@ type Environment struct {
 	PathToRoot             string
 	RelativeAssetDirectory string
 
-	ProviderWorkspace string
-	APIExportName     string
+	ProviderWorkspace          string
+	APIExportEndpointSliceName string
 }
 
-func NewEnvironment(apiExportName string, providerWorkspaceName string, pathToRoot string, relativeAssetDirectory string, relativeSetupDirectory string, log *logger.Logger) *Environment {
+func NewEnvironment(apiExportEndpointSliceName string, providerWorkspaceName string, pathToRoot string, relativeAssetDirectory string, relativeSetupDirectory string, log *logger.Logger) *Environment {
 	kcpBinary := filepath.Join(relativeAssetDirectory, "kcp")
 	kcpServ := NewKCPServer(pathToRoot, kcpBinary, pathToRoot, log)
 	//kcpServ.Out = os.Stdout
 	//kcpServ.Err = os.Stderr
 	return &Environment{
-		log:                    log,
-		kcpServer:              kcpServ,
-		APIExportName:          apiExportName,
-		ProviderWorkspace:      providerWorkspaceName,
-		RelativeSetupDirectory: relativeSetupDirectory,
-		RelativeAssetDirectory: relativeAssetDirectory,
-		PathToRoot:             pathToRoot,
+		log:                        log,
+		kcpServer:                  kcpServ,
+		APIExportEndpointSliceName: apiExportEndpointSliceName,
+		ProviderWorkspace:          providerWorkspaceName,
+		RelativeSetupDirectory:     relativeSetupDirectory,
+		RelativeAssetDirectory:     relativeAssetDirectory,
+		PathToRoot:                 pathToRoot,
 	}
 }
 
@@ -131,13 +131,13 @@ func (te *Environment) Start(useExsiting bool) (*rest.Config, string, error) {
 		return nil, "", fmt.Errorf("unable to create client: %w", err)
 	}
 
-	apiExport := kcpapiv1alpha.APIExport{}
-	err = cs.Get(context.Background(), types.NamespacedName{Name: te.APIExportName}, &apiExport)
+	apiExportEndpointSlice := kcpapiv1alpha.APIExportEndpointSlice{}
+	err = cs.Get(context.Background(), types.NamespacedName{Name: te.APIExportEndpointSliceName}, &apiExportEndpointSlice)
 	if err != nil {
 		return nil, "", err
 	}
 
-	if len(apiExport.Status.VirtualWorkspaces) == 0 {
+	if len(apiExportEndpointSlice.Status.APIExportEndpoints) == 0 {
 		return nil, "", fmt.Errorf("no virtual workspaces found")
 	}
 
@@ -145,7 +145,7 @@ func (te *Environment) Start(useExsiting bool) (*rest.Config, string, error) {
 	te.Config.QPS = 1000.0
 	te.Config.Burst = 2000.0
 
-	return te.Config, apiExport.Status.VirtualWorkspaces[0].URL, nil
+	return te.Config, apiExportEndpointSlice.Status.APIExportEndpoints[0].URL, nil
 }
 
 func (te *Environment) Stop(useExistingCluster bool) error {
@@ -334,9 +334,15 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, p
 	}
 
 	// list directory
-	err = te.runTemplatedKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", pathToSetupDir))
+	hasManifestFiles, err := hasManifestFiles(pathToSetupDir)
 	if err != nil {
 		return err
+	}
+	if hasManifestFiles {
+		err = te.runTemplatedKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", pathToSetupDir))
+		if err != nil {
+			return err
+		}
 	}
 	files, err := os.ReadDir(pathToSetupDir)
 	if err != nil {
@@ -368,6 +374,19 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, p
 		}
 	}
 	return nil
+}
+
+func hasManifestFiles(path string) (bool, error) {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".yaml") || strings.HasSuffix(file.Name(), ".yml") || strings.HasSuffix(file.Name(), ".json") {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (te *Environment) runTemplatedKubectlCommand(kubeconfig string, server string, command string) error {

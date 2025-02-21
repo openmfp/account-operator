@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250220-4ad7b5a.accounts.core.openmfp.org
+  name: v250220-cdcd05c.accounts.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
@@ -97,7 +97,7 @@ spec:
             type:
               description: Type specifies the intended type for this Account object.
               enum:
-              - folder
+              - org
               - account
               type: string
           required:

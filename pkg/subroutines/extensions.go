@@ -74,9 +74,9 @@ func (e *ExtensionSubroutine) Process(ctx context.Context, instance lifecycle.Ru
 		if us.GetName() == "" {
 			us.SetName(strings.ToLower(extension.Kind))
 		}
-		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Workspace)
-		}
+		//if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+		//	us.SetNamespace(*account.Status.Workspace)
+		//}
 
 		_, err = controllerutil.CreateOrUpdate(ctx, e.client, &us, func() error {
 			if len(extension.SpecGoTemplate.Raw) == 0 {
@@ -174,9 +174,9 @@ func (e *ExtensionSubroutine) Finalize(ctx context.Context, instance lifecycle.R
 		if us.GetName() == "" {
 			us.SetName(strings.ToLower(extension.Kind))
 		}
-		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Workspace)
-		}
+		//if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+		//	us.SetNamespace(*account.Status.Workspace)
+		//}
 
 		log.Info().
 			Str("name", us.GetName()).
