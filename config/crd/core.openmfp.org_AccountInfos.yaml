@@ -4,15 +4,15 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: accountlocations.core.openmfp.org
+  name: accountinfos.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
-    kind: AccountLocation
-    listKind: AccountLocationList
-    plural: accountlocations
-    singular: accountlocation
-  scope: Cluster
+    kind: AccountInfo
+    listKind: AccountInfoList
+    plural: accountinfos
+    singular: accountinfo
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
@@ -37,10 +37,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: AccountLocationSpec defines the desired state of Account
+            description: AccountInfoSpec defines the desired state of Account
             type: object
           status:
-            description: AccountLocationStatus defines the observed state of Account
+            description: AccountInfoStatus defines the observed state of Account
             type: object
         type: object
     served: true

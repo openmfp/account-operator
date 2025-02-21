@@ -20,24 +20,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AccountLocationSpec defines the desired state of Account
-type AccountLocationSpec struct {
+// AccountInfoSpec defines the desired state of Account
+type AccountInfoSpec struct {
 }
 
-// AccountLocationStatus defines the observed state of Account
-type AccountLocationStatus struct {
+// AccountInfoStatus defines the observed state of Account
+type AccountInfoStatus struct {
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:path=accountinfos
 // Account is the Schema for the accounts API
-type AccountLocation struct {
+type AccountInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AccountLocationSpec   `json:"spec,omitempty"`
-	Status AccountLocationStatus `json:"status,omitempty"`
+	Spec   AccountInfoSpec   `json:"spec,omitempty"`
+	Status AccountInfoStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -50,5 +51,5 @@ type AccountLocationList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&AccountLocation{}, &AccountLocationList{})
+	SchemeBuilder.Register(&AccountInfo{}, &AccountLocationList{})
 }
