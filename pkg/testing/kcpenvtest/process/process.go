@@ -218,7 +218,7 @@ func (ps *State) Exited() (bool, error) {
 func pollURLUntilOK(url url.URL, interval time.Duration, kcpAssetPath string, ready chan bool, stopCh stopChannel, log *logger.Logger) {
 
 	if interval <= 0 {
-		interval = 3000 * time.Millisecond
+		interval = 5000 * time.Millisecond
 	}
 	for {
 		token, ca, err := readTokenAndCA(kcpAssetPath)

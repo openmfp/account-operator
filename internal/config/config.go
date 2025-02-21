@@ -51,6 +51,7 @@ type Config struct {
 	MaxConcurrentReconciles int `envconfig:"default=10"`
 	Kcp                     struct {
 		VirtualWorkspaceUrl string `envconfig:"optional"`
+		ProviderWorkspace   string `envconfig:"optional,default=root:openmfp-system"`
 	}
 }
 

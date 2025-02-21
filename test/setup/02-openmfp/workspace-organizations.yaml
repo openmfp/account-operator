@@ -1,8 +1,8 @@
 apiVersion: tenancy.kcp.io/v1alpha1
 kind: Workspace
 metadata:
-  name: organizations
+  name: orgs
 spec:
   type:
-    name: organizationfolder
+    name: orgs
     path: root:openmfp-system

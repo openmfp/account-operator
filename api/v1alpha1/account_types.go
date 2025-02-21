@@ -24,7 +24,7 @@ import (
 type AccountType string
 
 const (
-	AccountTypeFolder                   AccountType = "folder"
+	AccountTypeOrganization             AccountType = "org"
 	AccountTypeAccount                  AccountType = "account"
 	NamespaceAccountOwnerLabel                      = "account.core.openmfp.org/owner"
 	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.org/owner-namespace"
@@ -33,7 +33,7 @@ const (
 // AccountSpec defines the desired state of Account
 type AccountSpec struct {
 	// Type specifies the intended type for this Account object.
-	// +kubebuilder:validation:Enum=folder;account
+	// +kubebuilder:validation:Enum=org;account
 	Type AccountType `json:"type"`
 
 	// The display name for this account

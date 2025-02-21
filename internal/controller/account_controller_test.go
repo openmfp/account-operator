@@ -40,8 +40,8 @@ type AccountTestSuite struct {
 	kubernetesClient  client.Client
 	kubernetesManager ctrl.Manager
 	testEnv           *kcpenvtest.Environment
-
-	cancel context.CancelCauseFunc
+	log               *logger.Logger
+	cancel            context.CancelCauseFunc
 }
 
 func (suite *AccountTestSuite) SetupSuite() {
@@ -52,6 +52,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 
 	log, err := logger.New(logConfig)
 	suite.Require().NoError(err)
+	suite.log = log
 	ctrl.SetLogger(log.Logr())
 
 	cfg, err := config.NewFromEnv()
@@ -76,6 +77,8 @@ func (suite *AccountTestSuite) SetupSuite() {
 		suite.Require().NoError(err)
 	}
 	suite.Require().NoError(err)
+	suite.Require().NotNil(k8sCfg)
+	suite.Require().NotEmpty(vsUrl)
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(v1.AddToScheme(scheme.Scheme))
@@ -84,7 +87,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	managerCfg.Host = vsUrl
 
 	testDataConfig := rest.CopyConfig(k8sCfg)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", k8sCfg.Host, "openmfp:organizations:root-org")
+	testDataConfig.Host = fmt.Sprintf("%s:%s", k8sCfg.Host, "openmfp:orgs:root-org")
 
 	// +kubebuilder:scaffold:scheme
 	suite.kubernetesClient, err = client.New(testDataConfig, client.Options{
@@ -131,7 +134,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 			Name: accountName,
 		},
 		Spec: corev1alpha1.AccountSpec{
-			Type: corev1alpha1.AccountTypeFolder,
+			Type: corev1alpha1.AccountTypeOrganization,
 		}}
 
 	// When
@@ -155,72 +158,32 @@ func (suite *AccountTestSuite) TestWorkspaceCreation() {
 	// Given
 	testContext := context.Background()
 	accountName := "test-account-ws-creation"
-	//account := &corev1alpha1.Account{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name: accountName,
-	//	},
-	//	Spec: corev1alpha1.AccountSpec{
-	//		Type: corev1alpha1.AccountTypeFolder,
-	//	}}
-	//
-	//// When
-	//err := suite.kubernetesClient.Create(testContext, account)
-	//suite.Nil(err)
+	account := &corev1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: accountName,
+		},
+		Spec: corev1alpha1.AccountSpec{
+			Type: corev1alpha1.AccountTypeAccount,
+		}}
+
+	// When
+	err := suite.kubernetesClient.Create(testContext, account)
+	suite.Require().NoError(err)
 
 	// Then
-	createdAccount := corev1alpha1.Account{}
+	createdWorkspace := kcptenancyv1alpha.Workspace{}
 	suite.Assert().Eventually(func() bool {
 		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
-			Name:      accountName,
-			Namespace: defaultNamespace,
-		}, &createdAccount)
-		return err == nil && createdAccount.Status.Workspace != nil
+			Name: accountName,
+		}, &createdWorkspace)
+		suite.log.Debug().Err(err).Msg("error")
+		return err == nil
 	}, defaultTestTimeout, defaultTickInterval)
 
 	// Test if Workspace exists
 	suite.verifyWorkspace(testContext, accountName, accountName)
 }
 
-//	func (suite *AccountTestSuite) TestNamespaceUsingExistingNamespace() {
-//		// Given
-//		testContext := context.Background()
-//		accountName := "test-account-existing-namespace"
-//		existingNamespaceName := "existing-namespace"
-//
-//		account := &corev1alpha1.Account{
-//			ObjectMeta: metav1.ObjectMeta{
-//				Name:      accountName,
-//				Workspace: defaultNamespace,
-//			},
-//			Spec: corev1alpha1.AccountSpec{
-//				Type:      corev1alpha1.AccountTypeFolder,
-//				Workspace: &existingNamespaceName,
-//			},
-//		}
-//
-//		nsToCreate := &v1.Workspace{ObjectMeta: metav1.ObjectMeta{Name: existingNamespaceName}}
-//		err := suite.kubernetesClient.Create(testContext, nsToCreate)
-//		suite.Nil(err)
-//
-//		// When
-//		err = suite.kubernetesClient.Create(testContext, account)
-//		suite.Nil(err)
-//
-//		// Then
-//		createdAccount := corev1alpha1.Account{}
-//		suite.Assert().Eventually(func() bool {
-//			err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
-//				Name:      accountName,
-//				Workspace: defaultNamespace,
-//			}, &createdAccount)
-//			return err == nil && createdAccount.Status.Workspace != nil
-//		}, defaultTestTimeout, defaultTickInterval)
-//
-//		suite.Assert().Equal(existingNamespaceName, *createdAccount.Status.Workspace)
-//		// Test if Workspace exists
-//		suite.verifyWorkspace(testContext, accountName, defaultNamespace, createdAccount.Status.Workspace)
-//	}
-//
 // func (suite *AccountTestSuite) TestExtensionProcessing() {
 //
 //	accountName := "test-account-extension-creation"

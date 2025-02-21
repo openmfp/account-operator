@@ -101,7 +101,7 @@ spec:
               type:
                 description: Type specifies the intended type for this Account object.
                 enum:
-                - folder
+                - org
                 - account
                 type: string
             required:

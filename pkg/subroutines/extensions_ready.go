@@ -64,9 +64,9 @@ func (e *ExtensionReadySubroutine) Process(ctx context.Context, instance lifecyc
 		if us.GetName() == "" {
 			us.SetName(strings.ToLower(extension.Kind))
 		}
-		if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
-			us.SetNamespace(*account.Status.Workspace)
-		}
+		//if namespaced, err := e.client.IsObjectNamespaced(&us); err == nil && namespaced {
+		//	us.SetNamespace(*account.Status.Workspace)
+		//}
 
 		err = e.client.Get(ctx, client.ObjectKeyFromObject(&us), &us)
 		if kerrors.IsNotFound(err) {
