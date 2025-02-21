@@ -5,8 +5,8 @@ metadata:
   name: core.openmfp.org
 spec:
   latestResourceSchemas:
-  - v250218-aee593a.accountlocations.core.openmfp.org
   - v250220-cdcd05c.accounts.core.openmfp.org
+  - v250221-c926428.accountinfos.core.openmfp.org
   permissionClaims:
   - all: true
     resource: namespaces
