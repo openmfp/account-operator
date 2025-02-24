@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+	openmfpcontext "github.com/openmfp/golang-commons/context"
+	"github.com/openmfp/golang-commons/logger"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -18,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
+	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
@@ -32,6 +35,8 @@ type WorkspaceSubroutineTestSuite struct {
 
 	// Mocks
 	clientMock *mocks.Client
+
+	context context.Context
 }
 
 func (suite *WorkspaceSubroutineTestSuite) SetupTest() {
@@ -42,8 +47,13 @@ func (suite *WorkspaceSubroutineTestSuite) SetupTest() {
 	suite.testObj = subroutines.NewWorkspaceSubroutine(suite.clientMock)
 
 	utilruntime.Must(corev1alpha1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(v1.AddToScheme(scheme.Scheme))
-	suite.clientMock.On("Scheme").Return(scheme.Scheme)
+	utilruntime.Must(corev1.AddToScheme(scheme.Scheme))
+
+	cfg, err := config.NewFromEnv()
+	suite.Require().NoError(err)
+	log, err := logger.New(logger.DefaultConfig())
+	suite.Require().NoError(err)
+	suite.context, _, _ = openmfpcontext.StartContext(log, cfg, cfg.ShutdownTimeout)
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestGetName_OK() {
@@ -74,6 +84,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_NotExisting
 	suite.False(res.Requeue)
 	suite.Assert().Zero(res.RequeueAfter)
 	suite.Nil(err)
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingButInDeletion() {
@@ -88,6 +99,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingBut
 	suite.True(res.Requeue)
 	suite.Assert().Zero(res.RequeueAfter)
 	suite.Nil(err)
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_Existing() {
@@ -103,6 +115,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_Existing() 
 	suite.True(res.Requeue)
 	suite.Assert().Zero(res.RequeueAfter)
 	suite.Nil(err)
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Deletion() {
@@ -120,6 +133,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Deletion() {
 
 	suite.True(err.Sentry())
 	suite.True(err.Retry())
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Get() {
@@ -136,19 +150,22 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Get() {
 
 	suite.True(err.Sentry())
 	suite.True(err.Retry())
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestProcessing_OK() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
+	suite.clientMock.On("Scheme").Return(scheme.Scheme)
 	mockGetWorkspaceCallNotFound(suite)
 	mockNewWorkspaceCreateCall(suite, defaultExpectedTestNamespace)
 
 	// When
-	_, err := suite.testObj.Process(context.Background(), testAccount)
+	_, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.Nil(err)
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestProcessing_Error_On_Get() {
@@ -157,33 +174,36 @@ func (suite *WorkspaceSubroutineTestSuite) TestProcessing_Error_On_Get() {
 	mockGetWorkspaceFailed(suite)
 
 	// When
-	_, err := suite.testObj.Process(context.Background(), testAccount)
+	_, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.Require().NotNil(err)
 	suite.Error(err.Err())
 	suite.True(err.Sentry())
 	suite.True(err.Retry())
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
 func (suite *WorkspaceSubroutineTestSuite) TestProcessing_CreateError() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
+	suite.clientMock.On("Scheme").Return(scheme.Scheme)
 	mockGetWorkspaceCallNotFound(suite)
 	suite.clientMock.EXPECT().
 		Create(mock.Anything, mock.Anything).
 		Return(kerrors.NewBadRequest(""))
 
 	// When
-	_, err := suite.testObj.Process(context.Background(), testAccount)
+	_, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.NotNil(err)
 	suite.True(err.Retry())
 	suite.True(err.Sentry())
+	suite.clientMock.AssertExpectations(suite.T())
 }
 
-func TestNamespaceSubroutineTestSuite(t *testing.T) {
+func TestWorkspaceSubroutineTestSuite(t *testing.T) {
 	suite.Run(t, new(WorkspaceSubroutineTestSuite))
 }
 

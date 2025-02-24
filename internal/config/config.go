@@ -53,6 +53,9 @@ type Config struct {
 		VirtualWorkspaceUrl string `envconfig:"optional"`
 		ProviderWorkspace   string `envconfig:"optional,default=root:openmfp-system"`
 	}
+	FGA struct {
+		StoreId string `envconfig:"default=1"`
+	}
 }
 
 // NewFromEnv creates a Config from environment values

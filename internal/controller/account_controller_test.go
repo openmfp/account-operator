@@ -134,7 +134,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 			Name: accountName,
 		},
 		Spec: corev1alpha1.AccountSpec{
-			Type: corev1alpha1.AccountTypeOrganization,
+			Type: corev1alpha1.AccountTypeOrg,
 		}}
 
 	// When
