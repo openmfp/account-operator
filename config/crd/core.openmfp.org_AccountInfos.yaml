@@ -38,6 +38,72 @@ spec:
             type: object
           spec:
             description: AccountInfoSpec defines the desired state of Account
+            properties:
+              account:
+                properties:
+                  clusterId:
+                    type: string
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - clusterId
+                - name
+                - path
+                - type
+                type: object
+              fga:
+                properties:
+                  store:
+                    properties:
+                      id:
+                        type: string
+                    required:
+                    - id
+                    type: object
+                required:
+                - store
+                type: object
+              organization:
+                properties:
+                  clusterId:
+                    type: string
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - clusterId
+                - name
+                - path
+                - type
+                type: object
+              parentAccount:
+                properties:
+                  clusterId:
+                    type: string
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - clusterId
+                - name
+                - path
+                - type
+                type: object
+            required:
+            - account
+            - fga
+            - organization
+            - parentAccount
             type: object
           status:
             description: AccountInfoStatus defines the observed state of Account

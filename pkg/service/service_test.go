@@ -256,7 +256,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 		//				Namespace: "root-namespace",
 		//			},
 		//			Spec: v1alpha1.AccountSpec{
-		//				Type: v1alpha1.AccountTypeOrganization,
+		//				Type: v1alpha1.AccountTypeOrg,
 		//			},
 		//			Status: v1alpha1.AccountStatus{
 		//				Workspace: pointer.To("sub-namespace"),
@@ -277,7 +277,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 		//				Namespace: "first-level-sub-namespace",
 		//			},
 		//			Spec: v1alpha1.AccountSpec{
-		//				Type: v1alpha1.AccountTypeOrganization,
+		//				Type: v1alpha1.AccountTypeOrg,
 		//			},
 		//		},
 		//	},
@@ -296,7 +296,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 		//				Namespace: "root-namespace",
 		//			},
 		//			Spec: v1alpha1.AccountSpec{
-		//				Type: v1alpha1.AccountTypeOrganization,
+		//				Type: v1alpha1.AccountTypeOrg,
 		//			},
 		//			Status: v1alpha1.AccountStatus{
 		//				Workspace: pointer.To("sub-namespace"),
@@ -313,7 +313,7 @@ func (s *serviceTest) TestGetFirstLevelAccount() {
 		//				Namespace: "first-level-sub-namespace1",
 		//			},
 		//			Spec: v1alpha1.AccountSpec{
-		//				Type: v1alpha1.AccountTypeOrganization,
+		//				Type: v1alpha1.AccountTypeOrg,
 		//			},
 		//		},
 		//	},

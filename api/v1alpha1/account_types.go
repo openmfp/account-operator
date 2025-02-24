@@ -24,7 +24,7 @@ import (
 type AccountType string
 
 const (
-	AccountTypeOrganization             AccountType = "org"
+	AccountTypeOrg                      AccountType = "org"
 	AccountTypeAccount                  AccountType = "account"
 	NamespaceAccountOwnerLabel                      = "account.core.openmfp.org/owner"
 	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.org/owner-namespace"
