@@ -280,7 +280,6 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 	suite.Equal("root:openmfp:orgs:root-org:test-account-account-info-creation1", accountInfo.Spec.Account.Path)
 	// Organization
 	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
-	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.NotNil(accountInfo.Spec.Organization.URL)
 	// Parent Account
 	suite.Require().NotNil(accountInfo.Spec.ParentAccount)
