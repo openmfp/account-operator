@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250224-cafdd19.accountinfos.core.openmfp.org
+  name: v250225-f1af48a.accountinfos.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
@@ -10,7 +10,7 @@ spec:
     listKind: AccountInfoList
     plural: accountinfos
     singular: accountinfo
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -46,11 +46,21 @@ spec:
                   type: string
                 type:
                   type: string
+                url:
+                  type: string
               required:
               - clusterId
               - name
               - path
               - type
+              - url
+              type: object
+            clusterInfo:
+              properties:
+                ca:
+                  type: string
+              required:
+              - ca
               type: object
             fga:
               properties:
@@ -74,11 +84,14 @@ spec:
                   type: string
                 type:
                   type: string
+                url:
+                  type: string
               required:
               - clusterId
               - name
               - path
               - type
+              - url
               type: object
             parentAccount:
               properties:
@@ -90,17 +103,20 @@ spec:
                   type: string
                 type:
                   type: string
+                url:
+                  type: string
               required:
               - clusterId
               - name
               - path
               - type
+              - url
               type: object
           required:
           - account
+          - clusterInfo
           - fga
           - organization
-          - parentAccount
           type: object
         status:
           description: AccountInfoStatus defines the observed state of Account
