@@ -31,7 +31,6 @@ import (
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/pkg/service"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 )
 
@@ -50,6 +49,10 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	if cfg.Subroutines.Workspace.Enabled {
 		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
 	}
+	if cfg.Subroutines.AccountInfo.Enabled {
+		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), mgr.GetConfig().CAFile))
+	}
+	// The extensions subroutine is temporarily disabled in this release. It will be refactored and activated in a later release
 	//if cfg.Subroutines.Extension.Enabled {
 	//	subs = append(subs, subroutines.NewExtensionSubroutine(mgr.GetClient()))
 	//}
@@ -68,11 +71,8 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 		}
 		log.Debug().Msg("FGA client created")
 
-		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.FGA.RootNamespace)
-
 		fgaClient := openfgav1.NewOpenFGAServiceClient(conn)
-
-		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, srv, cfg.Subroutines.FGA.RootNamespace, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
+		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
 		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),

@@ -33,6 +33,9 @@ type Config struct {
 		Workspace struct {
 			Enabled bool `envconfig:"default=true"`
 		}
+		AccountInfo struct {
+			Enabled bool `envconfig:"default=true"`
+		}
 		FGA struct {
 			Enabled         bool   `envconfig:"default=true"`
 			RootNamespace   string `envconfig:"default=openmfp-root"`

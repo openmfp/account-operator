@@ -24,14 +24,20 @@ import (
 type AccountInfoSpec struct {
 	FGA           FGAInfo          `json:"fga"`
 	Account       AccountLocation  `json:"account"`
-	ParentAccount *AccountLocation `json:"parentAccount"`
+	ParentAccount *AccountLocation `json:"parentAccount,omitempty"`
 	Organization  AccountLocation  `json:"organization"`
+	ClusterInfo   ClusterInfo      `json:"clusterInfo"`
+}
+
+type ClusterInfo struct {
+	CA string `json:"ca"`
 }
 
 type AccountLocation struct {
 	Name      string      `json:"name"`
 	ClusterId string      `json:"clusterId"`
 	Path      string      `json:"path"`
+	URL       string      `json:"url"`
 	Type      AccountType `json:"type"`
 }
 
@@ -48,9 +54,9 @@ type AccountInfoStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:path=accountinfos
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
-// +kubebuilder:resource:path=accountinfos
 // Account is the Schema for the accounts API
 type AccountInfo struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -62,13 +68,13 @@ type AccountInfo struct {
 
 //+kubebuilder:object:root=true
 
-// AccountLocationList contains a list of Account
-type AccountLocationList struct {
+// AccountInfoList contains a list of Account
+type AccountInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Account `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&AccountInfo{}, &AccountLocationList{})
+	SchemeBuilder.Register(&AccountInfo{}, &AccountInfoList{})
 }

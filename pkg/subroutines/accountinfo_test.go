@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
+	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
@@ -44,7 +44,7 @@ func (suite *AccountInfoSubroutineTestSuite) SetupTest() {
 	suite.clientMock = new(mocks.Client)
 
 	// Initialize Tested Object(s)
-	suite.testObj = subroutines.NewAccountInfoSubroutine(suite.clientMock)
+	suite.testObj = subroutines.NewAccountInfoSubroutine(suite.clientMock, "some-ca")
 
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme.Scheme))
@@ -75,16 +75,21 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 			Name: "account",
 		},
 		Spec: v1alpha1.AccountInfoSpec{
+			ClusterInfo: v1alpha1.ClusterInfo{
+				CA: "some-ca",
+			},
 			Organization: v1alpha1.AccountLocation{
 				Name:      "root-org",
 				ClusterId: "some-cluster-id-root-org",
 				Path:      "root:openmfp:orgs:root-org",
+				URL:       "https://example.com/root:openmfp:orgs:root-org",
 				Type:      "org",
 			},
 			Account: v1alpha1.AccountLocation{
 				Name:      "root-org",
 				ClusterId: "some-cluster-id-root-org",
 				Path:      "root:openmfp:orgs:root-org",
+				URL:       "https://example.com/root:openmfp:orgs:root-org",
 				Type:      "org",
 			},
 			FGA: v1alpha1.FGAInfo{
@@ -95,16 +100,38 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 		},
 	}
 
-	suite.mockGetWorkspaceByName("root-org")
-	suite.mockGetLogicalClusterByName("root:openmfp:orgs", "some-cluster-id")
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallNotFound()
 	suite.mockCreateAccountInfoCall(expectedAccountInfo)
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	res, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.Nil(err)
+	suite.False(res.Requeue)
+	suite.clientMock.AssertExpectations(suite.T())
+}
+
+func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Workspace_Not_Ready() {
+	// Given
+	testAccount := &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "root-org",
+		},
+		Spec: v1alpha1.AccountSpec{
+			Type: v1alpha1.AccountTypeOrg,
+		},
+	}
+
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseInitializing, "root:openmfp:orgs")
+
+	// When
+	res, err := suite.testObj.Process(suite.context, testAccount)
+
+	// Then
+	suite.Nil(err)
+	suite.True(res.Requeue)
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
@@ -126,6 +153,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_No_W
 
 	// Then
 	suite.NotNil(err)
+	suite.Equal("workspace does not exist:  \"\" not found", err.Err().Error())
 	suite.Error(err.Err())
 	suite.True(err.Retry())
 	suite.True(err.Sentry())
@@ -142,23 +170,21 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_No_Path() {
 			Type: v1alpha1.AccountTypeOrg,
 		},
 	}
-
-	suite.mockGetWorkspaceByName("root-org")
-	suite.mockGetLogicalClusterByName("", "some-cluster-id")
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "")
 
 	// When
 	_, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.NotNil(err)
-	suite.Equal("LogicalCluster does not have a path annotation", err.Err().Error())
+	suite.Equal("workspace URL is empty", err.Err().Error())
 	suite.Error(err.Err())
 	suite.True(err.Retry())
 	suite.True(err.Sentry())
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
-func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Path_Lookup_Failed() {
+func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Empty_Path() {
 	// Given
 	testAccount := &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
@@ -168,16 +194,38 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Path_Lookup_Faile
 			Type: v1alpha1.AccountTypeOrg,
 		},
 	}
-
-	suite.mockGetWorkspaceByName("root-org")
-	suite.mockGetLogicalClusterNotFound()
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, " ")
 
 	// When
 	_, err := suite.testObj.Process(suite.context, testAccount)
 
 	// Then
 	suite.NotNil(err)
-	suite.Equal("logicalCluster does not yet exist:  \"\" not found", err.Err().Error())
+	suite.Equal("workspace URL is empty", err.Err().Error())
+	suite.Error(err.Err())
+	suite.True(err.Retry())
+	suite.True(err.Sentry())
+	suite.clientMock.AssertExpectations(suite.T())
+}
+
+func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Invalid_Path() {
+	// Given
+	testAccount := &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "root-org",
+		},
+		Spec: v1alpha1.AccountSpec{
+			Type: v1alpha1.AccountTypeOrg,
+		},
+	}
+	suite.mockGetWorkspaceByWrongPath(kcpcorev1alpha1.LogicalClusterPhaseReady)
+
+	// When
+	_, err := suite.testObj.Process(suite.context, testAccount)
+
+	// Then
+	suite.NotNil(err)
+	suite.Equal("workspace URL is invalid", err.Err().Error())
 	suite.Error(err.Err())
 	suite.True(err.Retry())
 	suite.True(err.Sentry())
@@ -204,17 +252,20 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 				ClusterId: "some-cluster-id-root-org",
 				Path:      "root:openmfp:orgs:root-org",
 				Type:      "org",
+				URL:       "https://example.com/root:openmfp:orgs:root-org",
 			},
 			Account: v1alpha1.AccountLocation{
 				Name:      "example-account",
 				ClusterId: "some-cluster-id-example-account",
 				Path:      "root:openmfp:orgs:root-org:example-account",
 				Type:      "account",
+				URL:       "https://example.com/root:openmfp:orgs:root-org:example-account",
 			},
 			ParentAccount: &v1alpha1.AccountLocation{
 				Name:      "root-org",
 				ClusterId: "some-cluster-id-root-org",
 				Path:      "root:openmfp:orgs:root-org",
+				URL:       "https://example.com/root:openmfp:orgs:root-org",
 				Type:      "org",
 			},
 			FGA: v1alpha1.FGAInfo{
@@ -225,8 +276,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 		},
 	}
 
-	suite.mockGetWorkspaceByName("example-account")
-	suite.mockGetLogicalClusterByName("root:openmfp:orgs:root-org", "some-cluster-id-2")
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org:example-account")
 	parentAccountInfoSpec := v1alpha1.AccountInfoSpec{
 		Organization:  expectedAccountInfo.Spec.Organization,
 		ParentAccount: nil,
@@ -255,8 +305,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_No_Parent
 		},
 	}
 
-	suite.mockGetWorkspaceByName("example-account")
-	suite.mockGetLogicalClusterByName("root:openmfp:orgs:root-org", "some-cluster-id-2")
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallNotFound()
 
 	// When
@@ -282,8 +331,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_Parent_Lo
 		},
 	}
 
-	suite.mockGetWorkspaceByName("example-account")
-	suite.mockGetLogicalClusterByName("root:openmfp:orgs:root-org", "some-cluster-id-2")
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallFailed()
 
 	// When
@@ -348,7 +396,26 @@ func (suite *AccountInfoSubroutineTestSuite) mockCreateAccountInfoCall(info v1al
 		Return(nil)
 }
 
-func (suite *AccountInfoSubroutineTestSuite) mockGetWorkspaceByName(name string) *mocks.Client_Get_Call {
+func (suite *AccountInfoSubroutineTestSuite) mockGetWorkspaceByName(ready kcpcorev1alpha1.LogicalClusterPhaseType, path string) *mocks.Client_Get_Call {
+	return suite.clientMock.EXPECT().
+		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.Workspace")).
+		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
+			wsPath := ""
+			if path != "" {
+				wsPath = "https://example.com/" + path
+			}
+			actual, _ := obj.(*kcptenancyv1alpha.Workspace)
+			actual.Name = key.Name
+			actual.Spec = kcptenancyv1alpha.WorkspaceSpec{
+				Cluster: "some-cluster-id-" + key.Name,
+				URL:     wsPath,
+			}
+			actual.Status.Phase = ready
+		}).
+		Return(nil)
+}
+
+func (suite *AccountInfoSubroutineTestSuite) mockGetWorkspaceByWrongPath(ready kcpcorev1alpha1.LogicalClusterPhaseType) *mocks.Client_Get_Call {
 	return suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.Workspace")).
 		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
@@ -356,7 +423,9 @@ func (suite *AccountInfoSubroutineTestSuite) mockGetWorkspaceByName(name string)
 			actual.Name = key.Name
 			actual.Spec = kcptenancyv1alpha.WorkspaceSpec{
 				Cluster: "some-cluster-id-" + key.Name,
+				URL:     "asd",
 			}
+			actual.Status.Phase = ready
 		}).
 		Return(nil)
 }
@@ -376,27 +445,4 @@ func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfo(spec v1alpha1.Ac
 			actual.Spec = spec
 		}).
 		Return(nil)
-}
-
-func (suite *AccountInfoSubroutineTestSuite) mockGetLogicalClusterByName(path string, clusterid string) *mocks.Client_Get_Call {
-	return suite.clientMock.EXPECT().
-		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.LogicalCluster")).
-		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
-			actual, _ := obj.(*kcpcorev1alpha.LogicalCluster)
-			actual.Name = key.Name
-			actual.ObjectMeta.Annotations = map[string]string{}
-			if path != "" {
-				actual.ObjectMeta.Annotations["kcp.io/path"] = path
-			}
-			if clusterid != "" {
-				actual.ObjectMeta.Annotations["kcp.io/cluster"] = clusterid
-			}
-		}).
-		Return(nil)
-}
-
-func (suite *AccountInfoSubroutineTestSuite) mockGetLogicalClusterNotFound() *mocks.Client_Get_Call {
-	return suite.clientMock.EXPECT().
-		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.LogicalCluster")).
-		Return(kerrors.NewNotFound(schema.GroupResource{}, ""))
 }

@@ -3,6 +3,7 @@ package subroutines
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
@@ -25,22 +26,24 @@ import (
 var _ lifecycle.Subroutine = (*AccountInfoSubroutine)(nil)
 
 const (
-	AccountInfoSubroutineName = "AccountLocationSubroutine"
+	AccountInfoSubroutineName = "AccountInfoSubroutine"
+	DefaultAccountInfoName    = "account"
 )
 
 type AccountInfoSubroutine struct {
-	client client.Client
+	client   client.Client
+	serverCA string
 }
 
-func NewAccountInfoSubroutine(client client.Client) *AccountInfoSubroutine {
-	return &AccountInfoSubroutine{client: client}
+func NewAccountInfoSubroutine(client client.Client, serverCA string) *AccountInfoSubroutine {
+	return &AccountInfoSubroutine{client: client, serverCA: serverCA}
 }
 
 func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(_ context.Context, _ lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	return ctrl.Result{}, nil
 }
 
@@ -54,41 +57,49 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 	log := logger.LoadLoggerFromContext(ctx)
 
 	// select workspace for account
-	ws, err := r.retrieveWorkspace(ctx, instance, log)
+	accountWorkspace, err := r.retrieveWorkspace(ctx, instance, log)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
+	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
+		log.Info().Msg("workspace is not ready yet, retry")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
 	// Prepare context to work in workspace
-	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(ws.Spec.Cluster))
+	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(accountWorkspace.Spec.Cluster))
 
 	// Get FGA Store ID
 	// For now this is hard coded, needs to be replaced with Store generation on Organization level
 	storeId := cfg.FGA.StoreId
 
 	// Retrieve logical cluster
-	parentPath, err := r.retrieveCurrentWorkspacePath(ctx, err, log)
+	currentWorkspacePath, currentWorkspaceUrl, err := r.retrieveCurrentWorkspacePath(accountWorkspace)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	wsPath := fmt.Sprintf("%s:%s", parentPath, ws.Name)
-	selfAccountLocation := v1alpha1.AccountLocation{Name: instance.Name, ClusterId: ws.Spec.Cluster, Type: instance.Spec.Type, Path: wsPath}
+	selfAccountLocation := v1alpha1.AccountLocation{Name: instance.Name, ClusterId: accountWorkspace.Spec.Cluster, Type: instance.Spec.Type, Path: currentWorkspacePath, URL: currentWorkspaceUrl}
 
 	if instance.Spec.Type == v1alpha1.AccountTypeOrg {
-		accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: "account"}}
+		accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: DefaultAccountInfoName}}
 		_, err = controllerutil.CreateOrUpdate(wsCtx, r.client, accountInfo, func() error {
 			accountInfo.Spec.Account = selfAccountLocation
 			accountInfo.Spec.ParentAccount = nil
 			accountInfo.Spec.Organization = selfAccountLocation
 			accountInfo.Spec.FGA.Store.Id = storeId
+			accountInfo.Spec.ClusterInfo.CA = r.serverCA
 			return nil
 		})
+		if err != nil {
+			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
+		}
 
 		return ctrl.Result{}, nil
 	}
 
-	parentAccountInfo, exists, err := r.retrieveAccountInfo(ctx, err, log)
+	parentAccountInfo, exists, err := r.retrieveAccountInfo(ctx, log)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -97,7 +108,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("AccountInfo does not yet exist. Retry another time"), true, false)
 	}
 
-	accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: "account"}}
+	accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: DefaultAccountInfoName}}
 	_, err = controllerutil.CreateOrUpdate(wsCtx, r.client, accountInfo, func() error {
 		accountInfo.Spec.Account = selfAccountLocation
 		accountInfo.Spec.ParentAccount = &parentAccountInfo.Spec.Account
@@ -105,12 +116,15 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		accountInfo.Spec.FGA.Store.Id = storeId
 		return nil
 	})
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
+	}
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountInfoSubroutine) retrieveAccountInfo(ctx context.Context, err error, log *logger.Logger) (*v1alpha1.AccountInfo, bool, error) {
+func (r *AccountInfoSubroutine) retrieveAccountInfo(ctx context.Context, log *logger.Logger) (*v1alpha1.AccountInfo, bool, error) {
 	accountInfo := &v1alpha1.AccountInfo{}
-	err = r.client.Get(ctx, client.ObjectKey{Name: "account"}, accountInfo)
+	err := r.client.Get(ctx, client.ObjectKey{Name: "account"}, accountInfo)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Info().Msg("accountInfo does not yet exist, retry")
@@ -122,27 +136,31 @@ func (r *AccountInfoSubroutine) retrieveAccountInfo(ctx context.Context, err err
 	return accountInfo, true, nil
 }
 
-func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ctx context.Context, err error, log *logger.Logger) (string, error) {
-	lc := &kcpcorev1alpha.LogicalCluster{}
-	err = r.client.Get(ctx, client.ObjectKey{Name: "cluster"}, lc)
-	if err != nil {
-		log.Error().Err(err).Msg("logicalCluster does not yet exist")
-		return "", errors.Wrap(err, "logicalCluster does not yet exist")
+func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ws *kcptenancyv1alpha.Workspace) (string, string, error) {
+	if ws.Spec.URL == "" {
+		return "", "", fmt.Errorf("workspace URL is empty")
 	}
-	selfPath, ok := lc.ObjectMeta.Annotations["kcp.io/path"]
-	if !ok {
-		log.Error().Msg("logicalCluster does not have a path annotation")
-		return "", errors.New("logicalCluster does not have a path annotation")
+
+	// Parse path from URL
+	split := strings.Split(ws.Spec.URL, "/")
+	if len(split) < 3 {
+		return "", "", fmt.Errorf("workspace URL is invalid")
 	}
-	return selfPath, nil
+
+	lastSegment := split[len(split)-1]
+	if lastSegment == "" || strings.Trim(lastSegment, " ") == "" {
+		return "", "", fmt.Errorf("workspace URL is empty")
+	}
+	return lastSegment, ws.Spec.URL, nil
 }
 
 func (r *AccountInfoSubroutine) retrieveWorkspace(ctx context.Context, instance *v1alpha1.Account, log *logger.Logger) (*kcptenancyv1alpha.Workspace, error) {
 	ws := &kcptenancyv1alpha.Workspace{}
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, ws)
 	if err != nil {
-		log.Error().Msg("workspace does not exist")
-		return nil, err
+		const msg = "workspace does not exist"
+		log.Error().Msg(msg)
+		return nil, errors.Wrap(err, msg)
 	}
 	return ws, nil
 }

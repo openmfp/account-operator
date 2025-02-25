@@ -13,6 +13,7 @@ import (
 
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/otiai10/copy"
+	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,7 +31,6 @@ import (
 const (
 	kcpEnvStartTimeout        = "KCP_SERVER_START_TIMEOUT"
 	kcpEnvStopTimeout         = "KCP_SERVER_STOP_TIMEOUT"
-	defaulKCPServerTimeout    = 20 * time.Minute
 	defaultKCPServerTimeout   = 20 * time.Minute
 	kcpAdminKubeconfigPath    = ".kcp/admin.kubeconfig"
 	kcpRootNamespaceServerUrl = "https://localhost:6443/clusters/root"
@@ -62,6 +62,7 @@ type Environment struct {
 func NewEnvironment(apiExportEndpointSliceName string, providerWorkspaceName string, pathToRoot string, relativeAssetDirectory string, relativeSetupDirectory string, log *logger.Logger) *Environment {
 	kcpBinary := filepath.Join(relativeAssetDirectory, "kcp")
 	kcpServ := NewKCPServer(pathToRoot, kcpBinary, pathToRoot, log)
+
 	//kcpServ.Out = os.Stdout
 	//kcpServ.Err = os.Stderr
 	return &Environment{
@@ -87,8 +88,8 @@ func (te *Environment) Start(useExsiting bool) (*rest.Config, string, error) {
 		if err := te.defaultTimeouts(); err != nil {
 			return nil, "", fmt.Errorf("failed to default controlplane timeouts: %w", err)
 		}
-		//te.kcpServer.StartTimeout = te.ControlPlaneStartTimeout
-		//te.kcpServer.StopTimeout = te.ControlPlaneStopTimeout
+		te.kcpServer.StartTimeout = te.ControlPlaneStartTimeout
+		te.kcpServer.StopTimeout = te.ControlPlaneStopTimeout
 
 		te.log.Info().Msg("starting control plane")
 		if err := te.kcpServer.Start(); err != nil {
@@ -184,7 +185,7 @@ func (te *Environment) waitForDefaultNamespace() error {
 
 func (te *Environment) waitForWorkspace(client client.Client, name string, log *logger.Logger) error {
 	// It shouldn't take longer than 5s for the default namespace to be brought up in etcd
-	return wait.PollUntilContextTimeout(context.TODO(), time.Millisecond*500, time.Second*15, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.TODO(), time.Millisecond*500, time.Second*15, true, func(ctx context.Context) (bool, error) {
 		ws := &kcptenancyv1alpha.Workspace{}
 		if err := client.Get(ctx, types.NamespacedName{Name: name}, ws); err != nil {
 			return false, nil //nolint:nilerr
@@ -193,6 +194,11 @@ func (te *Environment) waitForWorkspace(client client.Client, name string, log *
 		log.Info().Str("workspace", name).Bool("ready", ready).Msg("waiting for workspace to be ready")
 		return ready, nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("workspace %s did not become ready: %w", name, err)
+	}
+	return err
 }
 
 func (te *Environment) defaultTimeouts() error {
@@ -204,7 +210,7 @@ func (te *Environment) defaultTimeouts() error {
 				return err
 			}
 		} else {
-			te.kcpServer.StartTimeout = defaulKCPServerTimeout
+			te.ControlPlaneStartTimeout = defaultKCPServerTimeout
 		}
 	}
 
@@ -373,6 +379,7 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, p
 			}
 		}
 	}
+	log.Info().Msg("finished applying setup")
 	return nil
 }
 
