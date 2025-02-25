@@ -50,7 +50,7 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
 	}
 	if cfg.Subroutines.AccountInfo.Enabled {
-		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), mgr.GetConfig().CAFile))
+		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), string(mgr.GetConfig().CAData)))
 	}
 	// The extensions subroutine is temporarily disabled in this release. It will be refactored and activated in a later release
 	//if cfg.Subroutines.Extension.Enabled {
