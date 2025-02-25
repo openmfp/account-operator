@@ -31,7 +31,7 @@ import (
 const (
 	kcpEnvStartTimeout        = "KCP_SERVER_START_TIMEOUT"
 	kcpEnvStopTimeout         = "KCP_SERVER_STOP_TIMEOUT"
-	defaultKCPServerTimeout   = 20 * time.Minute
+	defaultKCPServerTimeout   = 1 * time.Minute
 	kcpAdminKubeconfigPath    = ".kcp/admin.kubeconfig"
 	kcpRootNamespaceServerUrl = "https://localhost:6443/clusters/root"
 	dirOrderPattern           = `^[0-9]*-(.*)$`
