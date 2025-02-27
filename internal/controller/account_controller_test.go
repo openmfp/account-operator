@@ -67,15 +67,12 @@ func (suite *AccountTestSuite) SetupSuite() {
 
 	testEnvLogger := log.ComponentLogger("kcpenvtest")
 
-	suite.testEnv = kcpenvtest.NewEnvironment("openmfp.org", "openmfp-system", "../../", "bin", "test/setup", testEnvLogger)
-
-	var k8sCfg *rest.Config
-	var vsUrl string
 	useExistingCluster := true
 	if envValue, err := strconv.ParseBool(os.Getenv("USE_EXISTING_CLUSTER")); err != nil {
 		useExistingCluster = envValue
 	}
-	k8sCfg, vsUrl, err = suite.testEnv.Start(useExistingCluster)
+	suite.testEnv = kcpenvtest.NewEnvironment("openmfp.org", "openmfp-system", "../../", "bin", "test/setup", useExistingCluster, testEnvLogger)
+	k8sCfg, vsUrl, err := suite.testEnv.Start()
 	if err != nil {
 		stopErr := suite.testEnv.Stop(useExistingCluster)
 		suite.Require().NoError(stopErr)

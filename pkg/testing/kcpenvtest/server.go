@@ -57,9 +57,11 @@ type Environment struct {
 
 	ProviderWorkspace          string
 	APIExportEndpointSliceName string
+
+	useExistingCluster bool
 }
 
-func NewEnvironment(apiExportEndpointSliceName string, providerWorkspaceName string, pathToRoot string, relativeAssetDirectory string, relativeSetupDirectory string, log *logger.Logger) *Environment {
+func NewEnvironment(apiExportEndpointSliceName string, providerWorkspaceName string, pathToRoot string, relativeAssetDirectory string, relativeSetupDirectory string, useExistingCluster bool, log *logger.Logger) *Environment {
 	kcpBinary := filepath.Join(relativeAssetDirectory, "kcp")
 	kcpServ := NewKCPServer(pathToRoot, kcpBinary, pathToRoot, log)
 
@@ -73,12 +75,13 @@ func NewEnvironment(apiExportEndpointSliceName string, providerWorkspaceName str
 		RelativeSetupDirectory:     relativeSetupDirectory,
 		RelativeAssetDirectory:     relativeAssetDirectory,
 		PathToRoot:                 pathToRoot,
+		useExistingCluster:         useExistingCluster,
 	}
 }
 
-func (te *Environment) Start(useExsiting bool) (*rest.Config, string, error) {
+func (te *Environment) Start() (*rest.Config, string, error) {
 
-	if !useExsiting {
+	if !te.useExistingCluster {
 		// ensure clean .kcp directory
 		err := te.cleanDir()
 		if err != nil {
