@@ -194,8 +194,7 @@ func (suite *AccountTestSuite) TestWorkspaceCreation() {
 		err := suite.kubernetesClient.Get(testContext, types.NamespacedName{
 			Name: accountName,
 		}, updatedAccount)
-		cond := meta.FindStatusCondition(updatedAccount.Status.Conditions, "WorkspaceSubroutine_Ready")
-		return err == nil && cond != nil && cond.Status == metav1.ConditionTrue
+		return err == nil && meta.IsStatusConditionTrue(updatedAccount.Status.Conditions, "WorkspaceSubroutine_Ready")
 	}, defaultTestTimeout, defaultTickInterval)
 
 	// Verify workspace and account conditions
