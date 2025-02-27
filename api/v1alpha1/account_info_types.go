@@ -49,7 +49,7 @@ type StoreInfo struct {
 	Id string `json:"id"`
 }
 
-// AccountInfoStatus defines the observed state of Account
+// AccountInfoStatus defines the observed state of AccountInfo
 type AccountInfoStatus struct {
 }
 
@@ -57,7 +57,7 @@ type AccountInfoStatus struct {
 // +kubebuilder:resource:path=accountinfos
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
-// Account is the Schema for the accounts API
+// AccountInfo is the Schema for the accountinfo API
 type AccountInfo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -66,13 +66,12 @@ type AccountInfo struct {
 	Status AccountInfoStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
-// AccountInfoList contains a list of Account
+// +kubebuilder:object:root=true
+// AccountInfoList contains a list of AccountInfos
 type AccountInfoList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Account `json:"items"`
+	Items           []AccountInfo `json:"items"`
 }
 
 func init() {

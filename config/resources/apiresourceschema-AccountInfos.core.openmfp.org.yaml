@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250225-f1af48a.accountinfos.core.openmfp.org
+  name: v250226-290f38d.accountinfos.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
@@ -14,7 +14,7 @@ spec:
   versions:
   - name: v1alpha1
     schema:
-      description: Account is the Schema for the accounts API
+      description: AccountInfo is the Schema for the accountinfo API
       properties:
         apiVersion:
           description: |-
@@ -119,7 +119,7 @@ spec:
           - organization
           type: object
         status:
-          description: AccountInfoStatus defines the observed state of Account
+          description: AccountInfoStatus defines the observed state of AccountInfo
           type: object
       type: object
     served: true

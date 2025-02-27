@@ -57,7 +57,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 	log := logger.LoadLoggerFromContext(ctx)
 
 	// select workspace for account
-	accountWorkspace, err := r.retrieveWorkspace(ctx, instance, log)
+	accountWorkspace, err := retrieveWorkspace(ctx, instance, r.client, log)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
@@ -114,6 +114,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		accountInfo.Spec.ParentAccount = &parentAccountInfo.Spec.Account
 		accountInfo.Spec.Organization = parentAccountInfo.Spec.Organization
 		accountInfo.Spec.FGA.Store.Id = storeId
+		accountInfo.Spec.ClusterInfo.CA = r.serverCA
 		return nil
 	})
 	if err != nil {
@@ -152,15 +153,4 @@ func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ws *kcptenancyv1alp
 		return "", "", fmt.Errorf("workspace URL is empty")
 	}
 	return lastSegment, ws.Spec.URL, nil
-}
-
-func (r *AccountInfoSubroutine) retrieveWorkspace(ctx context.Context, instance *v1alpha1.Account, log *logger.Logger) (*kcptenancyv1alpha.Workspace, error) {
-	ws := &kcptenancyv1alpha.Workspace{}
-	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, ws)
-	if err != nil {
-		const msg = "workspace does not exist"
-		log.Error().Msg(msg)
-		return nil, errors.Wrap(err, msg)
-	}
-	return ws, nil
 }

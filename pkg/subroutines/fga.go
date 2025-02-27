@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
+	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
@@ -48,13 +50,26 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{}, nil
 	}
 
-	parentAccountInfo, err := e.getAccountInfo(ctx)
+	accountWorkspace, err := retrieveWorkspace(ctx, account, e.client, log)
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
+	}
+
+	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
+		log.Info().Msg("workspace is not ready yet, retry")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Prepare context to work in workspace
+	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(accountWorkspace.Spec.Cluster))
+
+	accountInfo, err := e.getAccountInfo(wsCtx)
 	if err != nil {
 		log.Error().Err(err).Msg("Couldn't get Store Id")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	if parentAccountInfo.Spec.FGA.Store.Id == "" {
+	if accountInfo.Spec.FGA.Store.Id == "" {
 		log.Error().Msg("FGA Store Id is empty")
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
 	}
@@ -69,7 +84,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 	// Parent Name
 	if account.Spec.Type != v1alpha1.AccountTypeOrg {
-		parentAccountName := parentAccountInfo.Spec.Account.Name
+		parentAccountName := accountInfo.Spec.ParentAccount.Name
 
 		// Determine parent account to create parent relation
 		writes = append(writes, &openfgav1.TupleKey{
@@ -102,7 +117,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 	for _, writeTuple := range writes {
 		_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
-			StoreId: parentAccountInfo.Spec.FGA.Store.Id,
+			StoreId: accountInfo.Spec.FGA.Store.Id,
 			Writes: &openfgav1.WriteRequestWrites{
 				TupleKeys: []*openfgav1.TupleKey{writeTuple},
 			},
@@ -203,7 +218,7 @@ func (e *FGASubroutine) getAccountInfo(ctx context.Context) (*v1alpha1.AccountIn
 	return accountInfo, nil
 }
 
-func (e *FGASubroutine) GetName() string { return "CreatorSubroutine" }
+func (e *FGASubroutine) GetName() string { return "FGASubroutine" }
 
 func (e *FGASubroutine) Finalizers() []string { return []string{"account.core.openmfp.org/fga"} }
 

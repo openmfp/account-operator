@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
@@ -105,7 +106,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingBut
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_Existing() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
-	mockGetWorkspaceByName(suite)
+	mockGetWorkspaceByName(suite.clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "https://example.com/")
 	mockDeleteWorkspaceCall(suite)
 
 	// When
@@ -121,7 +122,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_Existing() 
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Deletion() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
-	mockGetWorkspaceByName(suite)
+	mockGetWorkspaceByName(suite.clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "https://example.com/")
 	mockDeleteWorkspaceCallFailed(suite)
 
 	// When
@@ -223,16 +224,6 @@ func mockGetWorkspaceCallNotFound(suite *WorkspaceSubroutineTestSuite) *mocks.Cl
 	return suite.clientMock.EXPECT().
 		Get(mock.Anything, mock.Anything, mock.Anything).
 		Return(kerrors.NewNotFound(schema.GroupResource{}, ""))
-}
-
-func mockGetWorkspaceByName(suite *WorkspaceSubroutineTestSuite) *mocks.Client_Get_Call {
-	return suite.clientMock.EXPECT().
-		Get(mock.Anything, types.NamespacedName{}, mock.Anything).
-		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
-			actual, _ := obj.(*kcptenancyv1alpha.Workspace)
-			actual.Name = key.Name
-		}).
-		Return(nil)
 }
 
 func mockGetWorkspaceFailed(suite *WorkspaceSubroutineTestSuite) *mocks.Client_Get_Call {

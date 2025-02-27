@@ -24,7 +24,6 @@ import (
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,8 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -98,7 +95,6 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
-	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
 		CertDir: cfg.Webhooks.CertDir,

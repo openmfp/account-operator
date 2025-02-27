@@ -75,7 +75,7 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),
+		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithConditionManagement(),
 	}
 }
 

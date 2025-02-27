@@ -345,7 +345,7 @@ func (te *Environment) ApplyYAML(pathToRootConfig string, config *rest.Config, p
 		return err
 	}
 	if hasManifestFiles {
-		err = te.runTemplatedKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", pathToSetupDir))
+		err = te.runTemplatedKubectlCommand(pathToRootConfig, serverUrl, fmt.Sprintf("apply -f %s", pathToSetupDir), true)
 		if err != nil {
 			return err
 		}
@@ -396,7 +396,7 @@ func hasManifestFiles(path string) (bool, error) {
 	return false, nil
 }
 
-func (te *Environment) runTemplatedKubectlCommand(kubeconfig string, server string, command string) error {
+func (te *Environment) runTemplatedKubectlCommand(kubeconfig string, server string, command string, retry bool) error {
 	splitCommand := strings.Split(command, " ")
 	args := []string{fmt.Sprintf("--kubeconfig=%s", kubeconfig), fmt.Sprintf("--server=%s", server)}
 	args = append(args, splitCommand...)
@@ -405,6 +405,10 @@ func (te *Environment) runTemplatedKubectlCommand(kubeconfig string, server stri
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
+		if retry {
+			time.Sleep(5 * time.Second)
+			return te.runTemplatedKubectlCommand(kubeconfig, server, command, false)
+		}
 		return err
 	}
 	return nil

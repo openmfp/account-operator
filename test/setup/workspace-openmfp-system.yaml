@@ -4,5 +4,5 @@ metadata:
   name: openmfp-system
 spec:
   type:
-    name: organization
+    name: universal
     path: root

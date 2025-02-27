@@ -4,11 +4,11 @@ metadata:
   name: orgs
 spec:
   defaultAPIBindings:
-    - export: core.openmfp.org
+    - export: openmfp.org
       path: root:openmfp-system
   defaultChildWorkspaceType:
     name: org
-    path: root:openmfp-system
+    path: root
   extend:
     with:
       - name: universal
@@ -16,4 +16,4 @@ spec:
   limitAllowedChildren:
     types:
       - name: org
-        path: root:openmfp-system
+        path: root

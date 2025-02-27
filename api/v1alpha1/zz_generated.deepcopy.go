@@ -102,7 +102,7 @@ func (in *AccountInfoList) DeepCopyInto(out *AccountInfoList) {
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]Account, len(*in))
+		*out = make([]AccountInfo, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

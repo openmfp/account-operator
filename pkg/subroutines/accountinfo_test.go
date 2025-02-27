@@ -247,6 +247,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 			Name: "account",
 		},
 		Spec: v1alpha1.AccountInfoSpec{
+			ClusterInfo: v1alpha1.ClusterInfo{CA: "some-ca"},
 			Organization: v1alpha1.AccountLocation{
 				Name:      "root-org",
 				ClusterId: "some-cluster-id-root-org",

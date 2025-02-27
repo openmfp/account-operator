@@ -17,7 +17,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Account is the Schema for the accounts API
+        description: AccountInfo is the Schema for the accountinfo API
         properties:
           apiVersion:
             description: |-
@@ -122,7 +122,7 @@ spec:
             - organization
             type: object
           status:
-            description: AccountInfoStatus defines the observed state of Account
+            description: AccountInfoStatus defines the observed state of AccountInfo
             type: object
         type: object
     served: true

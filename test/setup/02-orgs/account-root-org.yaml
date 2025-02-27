@@ -1,7 +1,7 @@
 apiVersion: core.openmfp.org/v1alpha1
 kind: Account
 metadata:
-  name: root-org
+  name: openmfp
 spec:
   type: org
-  displayName: Root Organization
+  displayName: OpenMFP Org

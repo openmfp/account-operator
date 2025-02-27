@@ -2,20 +2,22 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIExport
 metadata:
   creationTimestamp: null
-  name: core.openmfp.org
+  name: openmfp.org
 spec:
   latestResourceSchemas:
-  - v250225-f1af48a.accountinfos.core.openmfp.org
-  - v250225-f1af48a.accounts.core.openmfp.org
+    - v250226-290f38d.accountinfos.core.openmfp.org
+    - v250226-290f38d.accounts.core.openmfp.org
+    - v250227-f9250b3.authorizationmodels.core.openmfp.org
+    - v250227-f9250b3.stores.core.openmfp.org
   permissionClaims:
-  - all: true
-    resource: namespaces
-  - all: true
-    group: tenancy.kcp.io
-    identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
-    resource: workspaces
-  - all: true
-    group: tenancy.kcp.io
-    identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
-    resource: workspacetypes
+    - all: true
+      resource: namespaces
+    - all: true
+      group: tenancy.kcp.io
+      identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
+      resource: workspaces
+    - all: true
+      group: tenancy.kcp.io
+      identityHash: '{{ .data.apiExportRootTenancyKcpIoIdentityHash }}'
+      resource: workspacetypes
 status: {}

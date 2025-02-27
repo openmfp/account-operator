@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
@@ -38,17 +39,17 @@ func newFgaError(c openfgav1.ErrorCode, m string) *fgaError {
 	}
 }
 
-func TestCreatorSubroutine_GetName(t *testing.T) {
+func TestFGASubroutine_GetName(t *testing.T) {
 	routine := subroutines.NewFGASubroutine(nil, nil, "", "", "")
-	assert.Equal(t, "CreatorSubroutine", routine.GetName())
+	assert.Equal(t, "FGASubroutine", routine.GetName())
 }
 
-func TestCreatorSubroutine_Finalizers(t *testing.T) {
+func TestFGASubroutine_Finalizers(t *testing.T) {
 	routine := subroutines.NewFGASubroutine(nil, nil, "", "", "")
 	assert.Equal(t, []string{"account.core.openmfp.org/fga"}, routine.Finalizers())
 }
 
-func TestCreatorSubroutine_Process(t *testing.T) {
+func TestFGASubroutine_Process(t *testing.T) {
 	creator := "test-creator"
 
 	testCases := []struct {
@@ -63,7 +64,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				Status: v1alpha1.AccountStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   "CreatorSubroutine_Ready",
+							Type:   "FGASubroutine_Ready",
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -80,6 +81,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					account := o.(*v1alpha1.AccountInfo)
 
@@ -117,6 +119,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 			},
 		},
@@ -130,6 +133,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -145,22 +149,20 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
 								Type: v1alpha1.AccountTypeOrg,
 							},
-							Account: v1alpha1.AccountLocation{
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
 								Type: v1alpha1.AccountTypeOrg,
 							},
-							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
+							Account: v1alpha1.AccountLocation{},
+							FGA:     v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				openFGAServiceClientMock.EXPECT().
-					Write(mock.Anything, mock.Anything).
-					Return(nil, assert.AnError)
-
+				openFGAServiceClientMock.EXPECT().Write(mock.Anything, mock.Anything).Return(nil, assert.AnError)
 			},
 		},
 		{
@@ -172,6 +174,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -182,6 +185,12 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
@@ -213,6 +222,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -223,6 +233,12 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
@@ -257,6 +273,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -267,6 +284,12 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
@@ -309,6 +332,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -319,6 +343,12 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
@@ -351,6 +381,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -361,6 +392,12 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
