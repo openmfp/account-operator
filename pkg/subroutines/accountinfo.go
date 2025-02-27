@@ -147,7 +147,7 @@ func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ws *kcptenancyv1alp
 	}
 
 	lastSegment := split[len(split)-1]
-	if lastSegment == "" || strings.Trim(lastSegment, " ") == "" {
+	if lastSegment == "" || strings.TrimSpace(lastSegment) == "" {
 		return "", "", fmt.Errorf("workspace URL is empty")
 	}
 	return lastSegment, ws.Spec.URL, nil
