@@ -70,10 +70,6 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 	// Prepare context to work in workspace
 	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(accountWorkspace.Spec.Cluster))
 
-	// Get FGA Store ID
-	// For now this is hard coded, needs to be replaced with Store generation on Organization level
-	storeId := cfg.FGA.StoreId
-
 	// Retrieve logical cluster
 	currentWorkspacePath, currentWorkspaceUrl, err := r.retrieveCurrentWorkspacePath(accountWorkspace)
 	if err != nil {
@@ -88,7 +84,9 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 			accountInfo.Spec.Account = selfAccountLocation
 			accountInfo.Spec.ParentAccount = nil
 			accountInfo.Spec.Organization = selfAccountLocation
-			accountInfo.Spec.FGA.Store.Id = storeId
+			// Get FGA Store ID
+			// For now this is hard coded, needs to be replaced with Store generation on Organization level
+			accountInfo.Spec.FGA.Store.Id = cfg.FGA.StoreId
 			accountInfo.Spec.ClusterInfo.CA = r.serverCA
 			return nil
 		})
@@ -113,7 +111,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		accountInfo.Spec.Account = selfAccountLocation
 		accountInfo.Spec.ParentAccount = &parentAccountInfo.Spec.Account
 		accountInfo.Spec.Organization = parentAccountInfo.Spec.Organization
-		accountInfo.Spec.FGA.Store.Id = storeId
+		accountInfo.Spec.FGA.Store.Id = parentAccountInfo.Spec.FGA.Store.Id
 		accountInfo.Spec.ClusterInfo.CA = r.serverCA
 		return nil
 	})
