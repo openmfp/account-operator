@@ -95,7 +95,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	managerCfg.Host = vsUrl
 
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:openmfp")
+	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "openmfp:orgs:root-org")
 
 	// +kubebuilder:scaffold:scheme
 	suite.kubernetesClient, err = client.New(testDataConfig, client.Options{
@@ -220,13 +220,13 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForOrganization() {
 
 	// Test if Workspace exists
 	suite.NotNil(accountInfo.Spec.ClusterInfo.CA)
-	suite.Equal("openmfp", accountInfo.Spec.Account.Name)
+	suite.Equal("root-org", accountInfo.Spec.Account.Name)
 	suite.NotNil(accountInfo.Spec.Account.URL)
-	suite.Equal("root:orgs:openmfp", accountInfo.Spec.Account.Path)
-	suite.Equal("openmfp", accountInfo.Spec.Organization.Name)
-	suite.Equal("openmfp", accountInfo.Spec.Organization.Name)
+	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.Account.Path)
+	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
+	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.NotNil(accountInfo.Spec.Organization.URL)
-	suite.Equal("root:orgs:openmfp", accountInfo.Spec.Organization.Path)
+	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.Organization.Path)
 	suite.Nil(accountInfo.Spec.ParentAccount)
 }
 
@@ -259,17 +259,17 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 
 	// Retrieve account info from workspace
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:openmfp:test-account-account-info-creation1")
+	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "openmfp:orgs:root-org:test-account-account-info-creation1")
 	testClient, err := client.New(testDataConfig, client.Options{
 		Scheme: suite.scheme,
 	})
 	suite.Require().NoError(err)
 
-	accountInfo := &v1alpha1.AccountInfo{}
+	accountInfo := v1alpha1.AccountInfo{}
 	suite.Assert().Eventually(func() bool {
 		err := testClient.Get(testContext, types.NamespacedName{
 			Name: "account",
-		}, accountInfo)
+		}, &accountInfo)
 		return err == nil
 	}, defaultTestTimeout, defaultTickInterval)
 
@@ -278,15 +278,15 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 	// Account
 	suite.Equal("test-account-account-info-creation1", accountInfo.Spec.Account.Name)
 	suite.NotNil(accountInfo.Spec.Account.URL)
-	suite.Equal("root:orgs:openmfp:test-account-account-info-creation1", accountInfo.Spec.Account.Path)
+	suite.Equal("root:openmfp:orgs:root-org:test-account-account-info-creation1", accountInfo.Spec.Account.Path)
 	// Organization
-	suite.Equal("openmfp", accountInfo.Spec.Organization.Name)
-	suite.Equal("openmfp", accountInfo.Spec.Organization.Name)
+	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
+	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.NotNil(accountInfo.Spec.Organization.URL)
 	// Parent Account
 	suite.Require().NotNil(accountInfo.Spec.ParentAccount)
-	suite.Equal("root:orgs:openmfp", accountInfo.Spec.ParentAccount.Path)
-	suite.Equal("openmfp", accountInfo.Spec.ParentAccount.Name)
+	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.ParentAccount.Path)
+	suite.Equal("root-org", accountInfo.Spec.ParentAccount.Name)
 	suite.NotNil(accountInfo.Spec.ParentAccount.URL)
 
 }
