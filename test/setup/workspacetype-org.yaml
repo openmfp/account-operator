@@ -4,7 +4,7 @@ metadata:
   name: org
 spec:
   defaultAPIBindings:
-    - export: openmfp.org
+    - export: core.openmfp.org
       path: root:openmfp-system
     - export: tenancy.kcp.io
       path: root

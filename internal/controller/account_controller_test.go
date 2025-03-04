@@ -71,7 +71,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	if envValue, err := strconv.ParseBool(os.Getenv("USE_EXISTING_CLUSTER")); err != nil {
 		useExistingCluster = envValue
 	}
-	suite.testEnv = kcpenvtest.NewEnvironment("openmfp.org", "openmfp-system", "../../", "bin", "test/setup", useExistingCluster, testEnvLogger)
+	suite.testEnv = kcpenvtest.NewEnvironment("core.openmfp.org", "openmfp-system", "../../", "bin", "test/setup", useExistingCluster, testEnvLogger)
 	k8sCfg, vsUrl, err := suite.testEnv.Start()
 	if err != nil {
 		stopErr := suite.testEnv.Stop(useExistingCluster)
@@ -92,7 +92,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	managerCfg.Host = vsUrl
 
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "openmfp:orgs:root-org")
+	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:root-org")
 
 	// +kubebuilder:scaffold:scheme
 	suite.kubernetesClient, err = client.New(testDataConfig, client.Options{
@@ -218,11 +218,11 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForOrganization() {
 	suite.NotNil(accountInfo.Spec.ClusterInfo.CA)
 	suite.Equal("root-org", accountInfo.Spec.Account.Name)
 	suite.NotNil(accountInfo.Spec.Account.URL)
-	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.Account.Path)
+	suite.Equal("root:orgs:root-org", accountInfo.Spec.Account.Path)
 	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.NotNil(accountInfo.Spec.Organization.URL)
-	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.Organization.Path)
+	suite.Equal("root:orgs:root-org", accountInfo.Spec.Organization.Path)
 	suite.Nil(accountInfo.Spec.ParentAccount)
 }
 
@@ -255,7 +255,7 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 
 	// Retrieve account info from workspace
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "openmfp:orgs:root-org:test-account-account-info-creation1")
+	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:root-org:test-account-account-info-creation1")
 	testClient, err := client.New(testDataConfig, client.Options{
 		Scheme: suite.scheme,
 	})
@@ -274,14 +274,14 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 	// Account
 	suite.Equal("test-account-account-info-creation1", accountInfo.Spec.Account.Name)
 	suite.NotNil(accountInfo.Spec.Account.URL)
-	suite.Equal("root:openmfp:orgs:root-org:test-account-account-info-creation1", accountInfo.Spec.Account.Path)
+	suite.Equal("root:orgs:root-org:test-account-account-info-creation1", accountInfo.Spec.Account.Path)
 	// Organization
 	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.Equal("root-org", accountInfo.Spec.Organization.Name)
 	suite.NotNil(accountInfo.Spec.Organization.URL)
 	// Parent Account
 	suite.Require().NotNil(accountInfo.Spec.ParentAccount)
-	suite.Equal("root:openmfp:orgs:root-org", accountInfo.Spec.ParentAccount.Path)
+	suite.Equal("root:orgs:root-org", accountInfo.Spec.ParentAccount.Path)
 	suite.Equal("root-org", accountInfo.Spec.ParentAccount.Name)
 	suite.NotNil(accountInfo.Spec.ParentAccount.URL)
 
