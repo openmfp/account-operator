@@ -52,13 +52,6 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Confi
 	if cfg.Subroutines.AccountInfo.Enabled {
 		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), string(mgr.GetConfig().CAData)))
 	}
-	// The extensions subroutine is temporarily disabled in this release. It will be refactored and activated in a later release
-	//if cfg.Subroutines.Extension.Enabled {
-	//	subs = append(subs, subroutines.NewExtensionSubroutine(mgr.GetClient()))
-	//}
-	//if cfg.Subroutines.ExtensionReady.Enabled {
-	//	subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
-	//}
 	if cfg.Subroutines.FGA.Enabled {
 		log.Debug().Str("GrpcAddr", cfg.Subroutines.FGA.GrpcAddr).Msg("Creating FGA Client")
 		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
