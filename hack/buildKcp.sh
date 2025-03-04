@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -ex
 
 DEFAULT_RELATIVE_BIN_PATH="bin/kcp"
 RELATIVE_BIN_PATH=${1:-$DEFAULT_RELATIVE_BIN_PATH}
