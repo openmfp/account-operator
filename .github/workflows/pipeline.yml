@@ -9,26 +9,11 @@ on:
       - synchronize
 
 jobs:
-  download-kcp:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          repository: kcp-dev/kcp
-          ref: main
-          path: kcp
-      - name: Run build script
-        working-directory: kcp
-        run: |
-          IGNORE_GO_VERSION=1  make build
-
   pipe:
-    needs: download-kcp
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
-    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@main
+    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@kcp
     secrets: inherit
     with:
       imageTagName: ghcr.io/openmfp/account-operator
