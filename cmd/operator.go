@@ -21,9 +21,13 @@ import (
 	"crypto/tls"
 	"os"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -126,7 +130,23 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		log.Fatal().Err(err).Msg("unable to start manager")
 	}
 
-	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg)
+	var fgaClient openfgav1.OpenFGAServiceClient
+	if cfg.Subroutines.FGA.Enabled {
+		log.Debug().Str("GrpcAddr", cfg.Subroutines.FGA.GrpcAddr).Msg("Creating FGA Client")
+		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		)
+		if err != nil {
+
+			log.Fatal().Err(err).Msg("error when creating the grpc client")
+		}
+		log.Debug().Msg("FGA client created")
+
+		fgaClient = openfgav1.NewOpenFGAServiceClient(conn)
+	}
+
+	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg, fgaClient)
 	if err := accountReconciler.SetupWithManager(mgr, cfg, log); err != nil {
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
 	}

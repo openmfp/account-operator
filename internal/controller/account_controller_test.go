@@ -12,6 +12,7 @@ import (
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -27,6 +28,7 @@ import (
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
+	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 	"github.com/openmfp/account-operator/pkg/testing/kcpenvtest"
 )
 
@@ -107,8 +109,9 @@ func (suite *AccountTestSuite) SetupSuite() {
 	})
 	suite.Require().NoError(err)
 
-	cfg.Subroutines.FGA.Enabled = false
-	accountReconciler := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg)
+	mockClient := mocks.NewOpenFGAServiceClient(suite.T())
+	mockClient.On("Write", mock.Anything, mock.Anything).Return(nil, nil)
+	accountReconciler := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg, mockClient)
 	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
 	suite.Require().NoError(err)
 
@@ -157,7 +160,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 		return err == nil && createdAccount.Finalizers != nil
 	}, defaultTestTimeout, defaultTickInterval)
 
-	suite.Equal([]string{"account.core.openmfp.org/finalizer"}, createdAccount.ObjectMeta.Finalizers)
+	suite.Equal([]string{"account.core.openmfp.org/finalizer", "account.core.openmfp.org/fga"}, createdAccount.ObjectMeta.Finalizers)
 }
 
 func (suite *AccountTestSuite) TestWorkspaceCreation() {
@@ -287,63 +290,6 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 
 }
 
-// func (suite *AccountTestSuite) TestExtensionProcessing() {
-//
-//	accountName := "test-account-extension-creation"
-//
-//	testExtensionResource := `{
-//		"podSelector": {
-//			"matchLabels": {
-//				"openmfp-owner": "{{ .Account.metadata.name }}"
-//			}
-//		}
-//	}`
-//
-//	account := &v1alpha1.Account{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      accountName,
-//			Workspace: defaultNamespace,
-//		},
-//		Spec: v1alpha1.AccountSpec{
-//			Type: v1alpha1.AccountTypeAccount,
-//			Extensions: []v1alpha1.Extension{
-//				{
-//					TypeMeta: metav1.TypeMeta{
-//						APIVersion: "networking.k8s.io/v1",
-//						Kind:       "NetworkPolicy",
-//					},
-//					SpecGoTemplate: apiextensionsv1.JSON{
-//						Raw: []byte(testExtensionResource),
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	err := suite.kubernetesClient.Create(context.Background(), account)
-//	suite.Assert().NoError(err)
-//
-//	// Then
-//	createdAccount := v1alpha1.Account{}
-//	createdNetworkPolicy := networkv1.NetworkPolicy{}
-//	suite.Assert().Eventually(func() bool {
-//		err := suite.kubernetesClient.Get(context.Background(), types.NamespacedName{
-//			Name:      accountName,
-//			Workspace: defaultNamespace,
-//		}, &createdAccount)
-//		if err != nil || createdAccount.Status.Workspace == nil {
-//			return false
-//		}
-//
-//		err = suite.kubernetesClient.Get(context.Background(), types.NamespacedName{
-//			Name:      "networkpolicy",
-//			Workspace: *createdAccount.Status.Workspace,
-//		}, &createdNetworkPolicy)
-//
-//		return err == nil && createdNetworkPolicy.Spec.PodSelector.MatchLabels["openmfp-owner"] == accountName
-//	}, time.Second*30, time.Millisecond*250)
-//
-// }
 func (suite *AccountTestSuite) verifyWorkspace(ctx context.Context, name string) {
 
 	suite.Require().NotNil(name, "failed to verify namespace name")

@@ -5,6 +5,3 @@ exclude:
     - main\.go$ # skip covering main.go
     - ^cmd # skip covering cmd directory
     - ^pkg/testing/kcpenvtest # skip covering kcpenvtest
-
-    - pkg/subroutines/extensions.go # currently not active functionality
-    - pkg/subroutines/extensions.go # currently not active functionality
