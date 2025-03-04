@@ -11,7 +11,7 @@ if [ -f $RELATIVE_BIN_PATH ]; then
 fi
 
 # This script should download the kcp repo to a directory and build it
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR=$(dirname "$0")
 
 # Create tmp directory
 rm -rf ${SCRIPT_DIR}/tmp
