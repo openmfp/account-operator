@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 set -ex
 
 DEFAULT_RELATIVE_BIN_PATH="bin/kcp"
