@@ -9,6 +9,19 @@ on:
       - synchronize
 
 jobs:
+  setup-kcp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: kcp-dev/kcp
+          ref: main
+          path: kcp
+      - name: Run build script
+        run: |
+          cd kcp && IGNORE_GO_VERSION=1  make build
+
   pipe:
     concurrency:
       group: ${{ github.ref }}
