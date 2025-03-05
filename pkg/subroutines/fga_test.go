@@ -2,11 +2,12 @@ package subroutines_test
 
 import (
 	"context"
-	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"testing"
+
+	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
-	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 	"github.com/openmfp/account-operator/pkg/subroutines/mocks"
 )
@@ -39,66 +39,17 @@ func newFgaError(c openfgav1.ErrorCode, m string) *fgaError {
 	}
 }
 
-func TestCreatorSubroutine_GetName(t *testing.T) {
-	routine := subroutines.NewFGASubroutine(nil, nil, nil, "", "", "", "")
-	assert.Equal(t, "CreatorSubroutine", routine.GetName())
+func TestFGASubroutine_GetName(t *testing.T) {
+	routine := subroutines.NewFGASubroutine(nil, nil, "", "", "")
+	assert.Equal(t, "FGASubroutine", routine.GetName())
 }
 
-func TestCreatorSubroutine_Finalizers(t *testing.T) {
-	routine := subroutines.NewFGASubroutine(nil, nil, nil, "", "", "", "")
-	assert.Equal(t, []string{"account.core.openmfp.io/fga"}, routine.Finalizers())
+func TestFGASubroutine_Finalizers(t *testing.T) {
+	routine := subroutines.NewFGASubroutine(nil, nil, "", "", "")
+	assert.Equal(t, []string{"account.core.openmfp.org/fga"}, routine.Finalizers())
 }
 
-func getStoreMocks(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-
-	clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(
-		func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-			ns := o.(*corev1.Namespace)
-
-			*ns = corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-						corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-					},
-				},
-			}
-			return nil
-		}).Once()
-	clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(
-		func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-			account := o.(*v1alpha1.Account)
-
-			*account = v1alpha1.Account{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "first-level",
-					Namespace: "first-level",
-				},
-				Spec: v1alpha1.AccountSpec{
-					Extensions: []v1alpha1.Extension{
-						{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "AccountExtension",
-								APIVersion: "core.openmfp.io/v1alpha1",
-							},
-							SpecGoTemplate: apiextensionsv1.JSON{},
-						},
-					},
-				},
-			}
-
-			return nil
-		}).Once()
-	clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(
-		func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-			return nil
-		}).Once()
-
-	openFGAServiceClientMock.EXPECT().ListStores(context.Background(), mock.Anything).Return(&openfgav1.ListStoresResponse{Stores: []*openfgav1.Store{{Id: "1", Name: "tenant-first-level"}}}, nil).Maybe()
-}
-
-func TestCreatorSubroutine_Process(t *testing.T) {
-	namespace := "test-openmfp-namespace"
+func TestFGASubroutine_Process(t *testing.T) {
 	creator := "test-creator"
 
 	testCases := []struct {
@@ -113,7 +64,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				Status: v1alpha1.AccountStatus{
 					Conditions: []metav1.Condition{
 						{
-							Type:   "CreatorSubroutine_Ready",
+							Type:   "FGASubroutine_Ready",
 							Status: metav1.ConditionTrue,
 						},
 					},
@@ -130,44 +81,32 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
+					account := o.(*v1alpha1.AccountInfo)
 
-					*ns = corev1.Namespace{
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
+							Name: "root-org",
+						},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
-
-					*account = v1alpha1.Account{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
-						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				openFGAServiceClientMock.EXPECT().ListStores(mock.Anything, mock.Anything).Return(nil, assert.AnError)
 			},
 		},
 		{
@@ -180,19 +119,7 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 			},
 		},
@@ -206,49 +133,36 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{},
+							FGA:     v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-				openFGAServiceClientMock.EXPECT().
-					Write(mock.Anything, mock.Anything).
-					Return(nil, assert.AnError)
-
+				openFGAServiceClientMock.EXPECT().Write(mock.Anything, mock.Anything).Return(nil, assert.AnError)
 			},
 		},
 		{
@@ -260,45 +174,40 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
 					Return(nil, newFgaError(openfgav1.ErrorCode_write_failed_due_to_invalid_input, "error"))
@@ -313,45 +222,40 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
 					Return(&openfgav1.WriteResponse{}, nil)
@@ -369,45 +273,40 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
 					Return(&openfgav1.WriteResponse{}, nil)
@@ -433,38 +332,35 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
@@ -485,44 +381,40 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
@@ -542,21 +434,21 @@ func TestCreatorSubroutine_Process(t *testing.T) {
 				test.setupMocks(openFGAClient, accountClient, clientMock)
 			}
 
-			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, accountClient, namespace, "owner", "parent", "account")
-			ctx := context.Background()
+			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, "owner", "parent", "account")
+			ctx := kontext.WithCluster(context.Background(), "abcdefghi")
 			_, err := routine.Process(ctx, test.account)
 			if test.expectedError {
 				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
 			}
+			clientMock.AssertExpectations(t)
 
 		})
 	}
 }
 
 func TestCreatorSubroutine_Finalize(t *testing.T) {
-	namespace := "test-openmfp-namespace"
 	creator := "test-creator"
 
 	testCases := []struct {
@@ -576,43 +468,30 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
+					account := o.(*v1alpha1.AccountInfo)
 
-					*ns = corev1.Namespace{
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
+							Name: "root-org",
+						},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
-
-					*account = v1alpha1.Account{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
-						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				openFGAServiceClientMock.EXPECT().ListStores(mock.Anything, mock.Anything).Return(nil, assert.AnError)
 			},
 		},
 		{
@@ -625,19 +504,6 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 			},
 		},
@@ -651,46 +517,36 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				openFGAServiceClientMock.EXPECT().Write(mock.Anything, mock.Anything).Return(nil, assert.AnError)
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.Anything).
+					Return(nil, assert.AnError)
 
 			},
 		},
@@ -703,45 +559,33 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
 					Return(nil, newFgaError(openfgav1.ErrorCode_write_failed_due_to_invalid_input, "error"))
@@ -756,44 +600,33 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
@@ -812,44 +645,33 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
-				getStoreMocks(openFGAServiceClientMock, k8ServiceMock, clientMock)
-
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					ns := o.(*corev1.Namespace)
-					*ns = corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								corev1alpha1.NamespaceAccountOwnerLabel:          "first-level",
-								corev1alpha1.NamespaceAccountOwnerNamespaceLabel: "first-level",
-							},
-						},
-					}
-					return nil
-				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
-					account := o.(*v1alpha1.Account)
 
-					*account = v1alpha1.Account{
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      "fist-level",
-							Namespace: "first-level",
+							Name: "root-org",
 						},
-						Spec: v1alpha1.AccountSpec{
-							Extensions: []v1alpha1.Extension{
-								{
-									TypeMeta: metav1.TypeMeta{
-										Kind:       "AccountExtension",
-										APIVersion: "core.openmfp.io/v1alpha1",
-									},
-									SpecGoTemplate: apiextensionsv1.JSON{},
-								},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
 							},
+							Account: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
 					return nil
 				}).Once()
-				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
@@ -869,8 +691,8 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 				test.setupMocks(openFGAClient, accountClient, k8sClient)
 			}
 
-			routine := subroutines.NewFGASubroutine(k8sClient, openFGAClient, accountClient, namespace, "owner", "parent", "account")
-			ctx := context.Background()
+			routine := subroutines.NewFGASubroutine(k8sClient, openFGAClient, "owner", "parent", "account")
+			ctx := kontext.WithCluster(context.Background(), "abcdefghi")
 			_, err := routine.Finalize(ctx, test.account)
 			if test.expectedError {
 				assert.NotNil(t, err)

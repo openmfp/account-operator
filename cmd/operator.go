@@ -21,10 +21,13 @@ import (
 	"crypto/tls"
 	"os"
 
+	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/spf13/cobra"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,7 +36,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
 	"github.com/openmfp/account-operator/internal/controller"
@@ -97,10 +99,6 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
-	if cfg.Kcp.Enabled {
-		utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
-	}
-
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
 		CertDir: cfg.Webhooks.CertDir,
@@ -117,26 +115,38 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		WebhookServer:                 webhookServer,
 		HealthProbeBindAddress:        probeAddr,
 		LeaderElection:                enableLeaderElection,
-		LeaderElectionID:              "8c290d9a.openmfp.io",
+		LeaderElectionID:              "8c290d9a.openmfp.org",
 		LeaderElectionConfig:          restCfg,
 		LeaderElectionReleaseOnCancel: true,
 	}
 	var mgr ctrl.Manager
 	var err error
-	if cfg.Kcp.Enabled {
-		mgrConfig := rest.CopyConfig(restCfg)
-		if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
-			mgrConfig.Host = cfg.Kcp.VirtualWorkspaceUrl
-		}
-		mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
-	} else {
-		mgr, err = ctrl.NewManager(restCfg, opts)
+	mgrConfig := rest.CopyConfig(restCfg)
+	if len(cfg.Kcp.VirtualWorkspaceUrl) > 0 {
+		mgrConfig.Host = cfg.Kcp.VirtualWorkspaceUrl
 	}
+	mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to start manager")
 	}
 
-	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg)
+	var fgaClient openfgav1.OpenFGAServiceClient
+	if cfg.Subroutines.FGA.Enabled {
+		log.Debug().Str("GrpcAddr", cfg.Subroutines.FGA.GrpcAddr).Msg("Creating FGA Client")
+		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		)
+		if err != nil {
+
+			log.Fatal().Err(err).Msg("error when creating the grpc client")
+		}
+		log.Debug().Msg("FGA client created")
+
+		fgaClient = openfgav1.NewOpenFGAServiceClient(conn)
+	}
+
+	accountReconciler := controller.NewAccountReconciler(log, mgr, cfg, fgaClient)
 	if err := accountReconciler.SetupWithManager(mgr, cfg, log); err != nil {
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
 	}
@@ -161,10 +171,10 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 }
 
 func initLog() *logger.Logger { // coverage-ignore
-	logcfg := logger.DefaultConfig()
-	logcfg.Level = loglevel
-	logcfg.NoJSON = logNoJson
-	log, err := logger.New(logcfg)
+	cfg := logger.DefaultConfig()
+	cfg.Level = loglevel
+	cfg.NoJSON = logNoJson
+	log, err := logger.New(cfg)
 	if err != nil {
 		setupLog.Error(err, "unable to create logger")
 		os.Exit(1)

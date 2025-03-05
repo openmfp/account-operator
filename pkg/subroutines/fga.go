@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
@@ -18,25 +19,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/pkg/service"
 )
 
 type FGASubroutine struct {
 	fgaClient       openfgav1.OpenFGAServiceClient
 	client          client.Client
-	srv             service.Servicer
-	rootNamespace   string
 	objectType      string
 	parentRelation  string
 	creatorRelation string
 }
 
-func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient, s service.Servicer, rootNamespace, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
+func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
 	return &FGASubroutine{
 		client:          cl,
 		fgaClient:       fgaClient,
-		srv:             s,
-		rootNamespace:   rootNamespace,
 		creatorRelation: creatorRelation,
 		parentRelation:  parentRealtion,
 		objectType:      objectType,
@@ -54,26 +50,47 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{}, nil
 	}
 
-	storeId, err := e.getStoreId(ctx, account)
+	accountWorkspace, err := retrieveWorkspace(ctx, account, e.client, log)
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
+	}
+
+	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
+		log.Info().Msg("workspace is not ready yet, retry")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Prepare context to work in workspace
+	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(accountWorkspace.Spec.Cluster))
+
+	accountInfo, err := e.getAccountInfo(wsCtx)
 	if err != nil {
 		log.Error().Err(err).Msg("Couldn't get Store Id")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
+	if accountInfo.Spec.FGA.Store.Id == "" {
+		log.Error().Msg("FGA Store Id is empty")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
+	}
+
+	clusterId, ok := kontext.ClusterFrom(ctx)
+	if !ok {
+		log.Error().Msg("Couldn't get Cluster Id")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("couldn't get cluster id"), true, true)
+	}
+
 	writes := []*openfgav1.TupleKey{}
 
-	// Determine parent account to create parent relation
-	if account.GetNamespace() != e.rootNamespace {
-		parent, _, err := getParentAccount(ctx, e.client, account.GetNamespace())
-		if err != nil {
-			log.Error().Err(err).Msg("Couldn't get parent account")
-			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
-		}
+	// Parent Name
+	if account.Spec.Type != v1alpha1.AccountTypeOrg {
+		parentAccountName := accountInfo.Spec.ParentAccount.Name
 
+		// Determine parent account to create parent relation
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s", e.objectType, account.GetName()),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.GetName()),
 			Relation: e.parentRelation,
-			User:     fmt.Sprintf("%s:%s", e.objectType, parent.GetName()),
+			User:     fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, parentAccountName),
 		})
 	}
 
@@ -86,22 +103,21 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		creator := formatUser(*account.Spec.Creator)
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("role:%s/%s/owner", account.Spec.Type, account.Name),
+			Object:   fmt.Sprintf("role:%s/%s/owner", clusterId, account.Name),
 			Relation: "assignee",
 			User:     fmt.Sprintf("user:%s", creator),
 		})
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s", e.objectType, account.Name),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.Name),
 			Relation: e.creatorRelation,
-			User:     fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
+			User:     fmt.Sprintf("role:%s/%s/owner#assignee", clusterId, account.Name),
 		})
 	}
 
 	for _, writeTuple := range writes {
-
 		_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
-			StoreId: storeId,
+			StoreId: accountInfo.Spec.FGA.Store.Id,
 			Writes: &openfgav1.WriteRequestWrites{
 				TupleKeys: []*openfgav1.TupleKey{writeTuple},
 			},
@@ -125,38 +141,44 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	account := runtimeObj.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
 
-	storeId, err := e.getStoreId(ctx, account)
+	parentAccountInfo, err := e.getAccountInfo(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Couldn't get Store Id")
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	deletes := []*openfgav1.TupleKeyWithoutCondition{}
+	if parentAccountInfo.Spec.FGA.Store.Id == "" {
+		log.Error().Msg("FGA Store Id is empty")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
+	}
 
-	if account.GetNamespace() != e.rootNamespace {
-		parent, _, err := getParentAccount(ctx, e.client, account.GetNamespace())
-		if err != nil {
-			log.Error().Err(err).Msg("Couldn't get parent account")
-			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
-		}
+	clusterId, ok := kontext.ClusterFrom(ctx)
+	if !ok {
+		log.Error().Msg("Couldn't get Cluster Id")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("couldn't get cluster id"), true, true)
+	}
+
+	deletes := []*openfgav1.TupleKeyWithoutCondition{}
+	if account.Spec.Type != v1alpha1.AccountTypeOrg {
+		parentAccountName := parentAccountInfo.Spec.Account.Name
 
 		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-			Object:   fmt.Sprintf("%s:%s", e.objectType, account.GetName()),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.GetName()),
 			Relation: e.parentRelation,
-			User:     fmt.Sprintf("%s:%s", e.objectType, parent.GetName()),
+			User:     fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, parentAccountName),
 		})
 	}
 
 	if account.Spec.Creator != nil {
 		creator := formatUser(*account.Spec.Creator)
 		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-			Object:   fmt.Sprintf("role:%s/%s/owner", account.Spec.Type, account.Name),
+			Object:   fmt.Sprintf("role:%s/%s/owner", clusterId, account.Name),
 			Relation: "assignee",
 			User:     fmt.Sprintf("user:%s", creator),
 		})
 
 		deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-			Object:   fmt.Sprintf("%s:%s", e.objectType, account.Name),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.Name),
 			Relation: e.creatorRelation,
 			User:     fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
 		})
@@ -165,7 +187,7 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	for _, deleteTuple := range deletes {
 
 		_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
-			StoreId: storeId,
+			StoreId: parentAccountInfo.Spec.FGA.Store.Id,
 			Deletes: &openfgav1.WriteRequestDeletes{
 				TupleKeys: []*openfgav1.TupleKeyWithoutCondition{deleteTuple},
 			},
@@ -186,42 +208,19 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 	return ctrl.Result{}, nil
 }
 
-func (e *FGASubroutine) getStoreId(ctx context.Context, account *v1alpha1.Account) (string, error) {
-	firstLevelAccountName := account.Name
-
-	if e.rootNamespace != account.Namespace {
-
-		lookupNamespace := account.Namespace
-		lookupCtx := ctx
-		for {
-			parent, newClusterContext, err := getParentAccount(lookupCtx, e.client, lookupNamespace)
-			if errors.Is(err, ErrNoParentAvailable) {
-				break
-			}
-			if err != nil {
-				return "", err
-			}
-
-			if newClusterContext != nil {
-				lookupCtx = kontext.WithCluster(lookupCtx, logicalcluster.Name(*newClusterContext))
-			}
-
-			lookupNamespace = parent.GetNamespace()
-			firstLevelAccountName = parent.GetName()
-		}
-	}
-
-	storeId, err := helpers.GetStoreIDForTenant(ctx, e.fgaClient, firstLevelAccountName)
+func (e *FGASubroutine) getAccountInfo(ctx context.Context) (*v1alpha1.AccountInfo, error) {
+	// Get AccountInfo For Project
+	accountInfo := &v1alpha1.AccountInfo{}
+	err := e.client.Get(ctx, client.ObjectKey{Name: DefaultAccountInfoName}, accountInfo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	return storeId, nil
+	return accountInfo, nil
 }
 
-func (e *FGASubroutine) GetName() string { return "CreatorSubroutine" }
+func (e *FGASubroutine) GetName() string { return "FGASubroutine" }
 
-func (e *FGASubroutine) Finalizers() []string { return []string{"account.core.openmfp.io/fga"} }
+func (e *FGASubroutine) Finalizers() []string { return []string{"account.core.openmfp.org/fga"} }
 
 var saRegex = regexp.MustCompile(`^system:serviceaccount:[^:]*:[^:]*$`)
 

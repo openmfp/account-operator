@@ -2,22 +2,19 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v241029-1a02f92.accounts.core.openmfp.io
+  name: v250305-70de32b.accounts.core.openmfp.org
 spec:
-  group: core.openmfp.io
+  group: core.openmfp.org
   names:
     kind: Account
     listKind: AccountList
     plural: accounts
     singular: account
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.displayName
       name: Display Name
-      type: string
-    - jsonPath: .status.namespace
-      name: Account Namespace
       type: string
     - jsonPath: .spec.type
       name: Type
@@ -94,13 +91,10 @@ spec:
                 - specGoTemplate
                 type: object
               type: array
-            namespace:
-              description: Namespace is the account should take ownership of
-              type: string
             type:
               description: Type specifies the intended type for this Account object.
               enum:
-              - folder
+              - org
               - account
               type: string
           required:
@@ -179,8 +173,6 @@ spec:
                 - type
                 type: object
               type: array
-            namespace:
-              type: string
             nextReconcileTime:
               format: date-time
               type: string
