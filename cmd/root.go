@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,6 +24,7 @@ var rootCmd = &cobra.Command{
 func init() { // coverage-ignore
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apisv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 	rootCmd.AddCommand(operatorCmd)
 

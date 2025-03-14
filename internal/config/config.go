@@ -47,8 +47,8 @@ type Config struct {
 	}
 	MaxConcurrentReconciles int `envconfig:"default=10"`
 	Kcp                     struct {
-		VirtualWorkspaceUrl string `envconfig:"optional"`
-		ProviderWorkspace   string `envconfig:"optional,default=root"`
+		ApiExportEndpointSliceName string `envconfig:"optional"`
+		ProviderWorkspace          string `envconfig:"optional,default=root"`
 	}
 	FGA struct {
 		StoreId string `envconfig:"default=1"`
