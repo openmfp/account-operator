@@ -10,7 +10,7 @@ require (
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
 	github.com/openmfp/golang-commons v0.142.11
 	github.com/otiai10/copy v1.14.1
-	github.com/rs/zerolog v1.33.0
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/vrischmann/envconfig v1.4.1
