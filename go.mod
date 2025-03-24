@@ -8,7 +8,7 @@ require (
 	github.com/kcp-dev/kcp/sdk v0.27.0
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
-	github.com/openmfp/golang-commons v0.142.13
+	github.com/openmfp/golang-commons v0.142.14
 	github.com/otiai10/copy v1.14.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
