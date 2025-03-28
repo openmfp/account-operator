@@ -5,7 +5,7 @@ go 1.23.2
 replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime v0.19.0-kcp.1
 
 require (
-	github.com/kcp-dev/kcp/sdk v0.27.0
+	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
 	github.com/openmfp/golang-commons v0.142.16
