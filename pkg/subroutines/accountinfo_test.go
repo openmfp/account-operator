@@ -92,11 +92,6 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 				URL:       "https://example.com/root:openmfp:orgs:root-org",
 				Type:      "org",
 			},
-			FGA: v1alpha1.FGAInfo{
-				Store: v1alpha1.StoreInfo{
-					Id: "1",
-				},
-			},
 		},
 	}
 
@@ -282,6 +277,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 		Organization:  expectedAccountInfo.Spec.Organization,
 		ParentAccount: nil,
 		Account:       expectedAccountInfo.Spec.Organization,
+		FGA:           v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "1"}},
 	}
 	suite.mockGetAccountInfo(parentAccountInfoSpec).Once()
 	suite.mockGetAccountInfoCallNotFound()

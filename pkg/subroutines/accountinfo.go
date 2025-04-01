@@ -8,7 +8,6 @@ import (
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
-	commonconfig "github.com/openmfp/golang-commons/config"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
 	"github.com/openmfp/golang-commons/logger"
@@ -20,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
-	"github.com/openmfp/account-operator/internal/config"
 )
 
 var _ lifecycle.Subroutine = (*AccountInfoSubroutine)(nil)
@@ -53,7 +51,6 @@ func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
 
 func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*v1alpha1.Account)
-	cfg := commonconfig.LoadConfigFromContext(ctx).(config.Config)
 	log := logger.LoadLoggerFromContext(ctx)
 
 	// select workspace for account
@@ -78,14 +75,10 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 
 	selfAccountLocation := v1alpha1.AccountLocation{Name: instance.Name, ClusterId: accountWorkspace.Spec.Cluster, Type: instance.Spec.Type, Path: currentWorkspacePath, URL: currentWorkspaceUrl}
 
-	// Get FGA Store ID
-	// For now this is hard coded, needs to be replaced with Store generation on Organization level
-	storeId := cfg.FGA.StoreId
-
 	if instance.Spec.Type == v1alpha1.AccountTypeOrg {
 		accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: DefaultAccountInfoName}}
-		_, err = controllerutil.CreateOrUpdate(wsCtx, r.client, accountInfo, func() error {
-			accountInfo.Spec.FGA.Store.Id = storeId
+		_, err = controllerutil.CreateOrPatch(wsCtx, r.client, accountInfo, func() error {
+			// the .Spec.FGA.Store.ID is set from an external workspace initializer
 			accountInfo.Spec.Account = selfAccountLocation
 			accountInfo.Spec.ParentAccount = nil
 			accountInfo.Spec.Organization = selfAccountLocation
@@ -113,7 +106,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		accountInfo.Spec.Account = selfAccountLocation
 		accountInfo.Spec.ParentAccount = &parentAccountInfo.Spec.Account
 		accountInfo.Spec.Organization = parentAccountInfo.Spec.Organization
-		accountInfo.Spec.FGA.Store.Id = storeId
+		accountInfo.Spec.FGA.Store.Id = parentAccountInfo.Spec.FGA.Store.Id
 		accountInfo.Spec.ClusterInfo.CA = r.serverCA
 		return nil
 	})

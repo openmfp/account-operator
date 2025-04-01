@@ -50,9 +50,6 @@ type Config struct {
 		ApiExportEndpointSliceName string `envconfig:"optional"`
 		ProviderWorkspace          string `envconfig:"optional,default=root"`
 	}
-	FGA struct {
-		StoreId string `envconfig:"default=1"`
-	}
 }
 
 // NewFromEnv creates a Config from environment values
