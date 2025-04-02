@@ -12,7 +12,6 @@ import (
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -62,6 +61,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	ctrl.SetLogger(log.Logr())
 
 	cfg, err := config.NewFromEnv()
+	cfg.Subroutines.FGA.Enabled = false
 	suite.Require().NoError(err)
 
 	testContext, cancel, _ := openmfpcontext.StartContext(log, cfg, cfg.ShutdownTimeout)
@@ -110,7 +110,7 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	mockClient := mocks.NewOpenFGAServiceClient(suite.T())
-	mockClient.On("Write", mock.Anything, mock.Anything).Return(nil, nil)
+	// mockClient.On("Write", mock.Anything, mock.Anything).Return(nil, nil)
 	accountReconciler := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg, mockClient)
 	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
 	suite.Require().NoError(err)
