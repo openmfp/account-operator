@@ -1,12 +1,19 @@
 name: ci
-on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 jobs:
   pipe:
     concurrency:
       group: ${{ github.ref }}
       cancel-in-progress: true
-    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@main
+    uses: openmfp/gha/.github/workflows/pipeline-golang-app.yml@kcp
     secrets: inherit
     with:
       imageTagName: ghcr.io/openmfp/account-operator

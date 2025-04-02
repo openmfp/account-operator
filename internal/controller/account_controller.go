@@ -22,16 +22,12 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/logger"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
-	"github.com/openmfp/account-operator/pkg/service"
 	"github.com/openmfp/account-operator/pkg/subroutines"
 )
 
@@ -45,37 +41,19 @@ type AccountReconciler struct {
 	lifecycle *lifecycle.LifecycleManager
 }
 
-func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config) *AccountReconciler {
+func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config, fgaClient openfgav1.OpenFGAServiceClient) *AccountReconciler {
 	var subs []lifecycle.Subroutine
-	if cfg.Subroutines.Namespace.Enabled {
-		subs = append(subs, subroutines.NewNamespaceSubroutine(mgr.GetClient()))
+	if cfg.Subroutines.Workspace.Enabled {
+		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
 	}
-	if cfg.Subroutines.Extension.Enabled {
-		subs = append(subs, subroutines.NewExtensionSubroutine(mgr.GetClient()))
-	}
-	if cfg.Subroutines.ExtensionReady.Enabled {
-		subs = append(subs, subroutines.NewExtensionReadySubroutine(mgr.GetClient()))
+	if cfg.Subroutines.AccountInfo.Enabled {
+		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), string(mgr.GetConfig().CAData)))
 	}
 	if cfg.Subroutines.FGA.Enabled {
-		log.Debug().Str("GrpcAddr", cfg.Subroutines.FGA.GrpcAddr).Msg("Creating FGA Client")
-		conn, err := grpc.NewClient(cfg.Subroutines.FGA.GrpcAddr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-		)
-		if err != nil {
-
-			log.Fatal().Err(err).Msg("error when creating the grpc client")
-		}
-		log.Debug().Msg("FGA client created")
-
-		srv := service.NewService(mgr.GetClient(), cfg.Subroutines.FGA.RootNamespace)
-
-		fgaClient := openfgav1.NewOpenFGAServiceClient(conn)
-
-		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, srv, cfg.Subroutines.FGA.RootNamespace, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
+		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithSpreadingReconciles().WithConditionManagement(),
+		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithConditionManagement(),
 	}
 }
 
@@ -88,8 +66,5 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg config.Config
 	if err != nil {
 		return err
 	}
-	if cfg.Kcp.Enabled {
-		return builder.Complete(kcp.WithClusterInContext(r))
-	}
-	return builder.Complete(r)
+	return builder.Complete(kcp.WithClusterInContext(r))
 }

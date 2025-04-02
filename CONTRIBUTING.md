@@ -21,6 +21,18 @@ You are welcome to contribute with your pull requests. These steps explain the c
 
 To let tests run locally, run `go test ./...` in the root directory of the repository.
 
+
+### Test your change in a locally running OpenMFP instance
+
+
+```bash
+docker build -t account-operator:latest . && \
+kind load docker-image account-operator:latest --name=openmfp && \
+kubectl patch deployment openmfp-account-operator -n openmfp-system --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "IfNotPresent"}]' && \
+kubectl patch deployment openmfp-account-operator -n openmfp-system --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "account-operator:latest"}]' && \
+kubectl rollout restart deployment openmfp-account-operator -n openmfp-system && \
+kubectl rollout status deployment openmfp-account-operator -n openmfp-system
+```
 ## Issues
 We use GitHub issues to track bugs. Please ensure your description is
 clear and includes sufficient instructions to reproduce the issue.

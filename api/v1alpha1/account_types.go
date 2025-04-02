@@ -24,20 +24,17 @@ import (
 type AccountType string
 
 const (
-	AccountTypeFolder                   AccountType = "folder"
+	AccountTypeOrg                      AccountType = "org"
 	AccountTypeAccount                  AccountType = "account"
-	NamespaceAccountOwnerLabel                      = "account.core.openmfp.io/owner"
-	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.io/owner-namespace"
+	NamespaceAccountOwnerLabel                      = "account.core.openmfp.org/owner"
+	NamespaceAccountOwnerNamespaceLabel             = "account.core.openmfp.org/owner-namespace"
 )
 
 // AccountSpec defines the desired state of Account
 type AccountSpec struct {
 	// Type specifies the intended type for this Account object.
-	// +kubebuilder:validation:Enum=folder;account
+	// +kubebuilder:validation:Enum=org;account
 	Type AccountType `json:"type"`
-
-	// Namespace is the account should take ownership of
-	Namespace *string `json:"namespace,omitempty"`
 
 	// The display name for this account
 	// +kubebuilder:validation:MaxLength=255
@@ -69,15 +66,14 @@ type Extension struct {
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
 	Conditions         []metav1.Condition `json:"conditions,omitempty"`
-	Namespace          *string            `json:"namespace,omitempty"`
 	ObservedGeneration int64              `json:"observedGeneration,omitempty" protobuf:"varint,3,opt,name=observedGeneration"`
 	NextReconcileTime  metav1.Time        `json:"nextReconcileTime,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:JSONPath=".spec.displayName",name="Display Name",type=string
-// +kubebuilder:printcolumn:JSONPath=".status.namespace",name="Account Namespace",type=string
 // +kubebuilder:printcolumn:JSONPath=".spec.type",name="Type",type=string
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 
