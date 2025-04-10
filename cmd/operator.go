@@ -47,9 +47,7 @@ var operatorCmd = &cobra.Command{
 }
 
 var (
-	metricsAddr          string
 	enableLeaderElection bool
-	probeAddr            string
 	secureMetrics        bool
 	enableHTTP2          bool
 )
@@ -78,13 +76,13 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	opts := ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
-			BindAddress:   metricsAddr,
+			BindAddress:   defaultCfg.Metrics.BindAddress,
 			SecureServing: secureMetrics,
 			TLSOpts:       tlsOpts,
 		},
 		BaseContext:                   func() context.Context { return ctx },
 		WebhookServer:                 webhookServer,
-		HealthProbeBindAddress:        probeAddr,
+		HealthProbeBindAddress:        defaultCfg.HealthProbeBindAddress,
 		LeaderElection:                enableLeaderElection,
 		LeaderElectionID:              "8c290d9a.openmfp.org",
 		LeaderElectionConfig:          restCfg,
