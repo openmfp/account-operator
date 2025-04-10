@@ -5,7 +5,7 @@ type OperatorConfig struct {
 	Webhooks struct {
 		Enabled bool   `mapstructure:"webhooks--enabled"`
 		CertDir string `mapstructure:"webhooks-cert-dir"`
-	} `mapstructure:"subroutines-workspace-enabled"`
+	} `mapstructure:",squash"`
 	Subroutines struct {
 		Workspace struct {
 			Enabled bool `mapstructure:"subroutines-workspace-enabled"`
