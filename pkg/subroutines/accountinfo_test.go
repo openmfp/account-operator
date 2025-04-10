@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
@@ -49,11 +50,11 @@ func (suite *AccountInfoSubroutineTestSuite) SetupTest() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme.Scheme))
 
-	cfg, err := config.NewFromEnv()
-	suite.Require().NoError(err)
+	cfg := config.Config{}
+	var err error
 	suite.log, err = logger.New(logger.DefaultConfig())
 	suite.Require().NoError(err)
-	suite.context, _, _ = openmfpcontext.StartContext(suite.log, cfg, cfg.ShutdownTimeout)
+	suite.context, _, _ = openmfpcontext.StartContext(suite.log, cfg, 1*time.Minute)
 }
 
 func TestAccountInfoSubroutineTestSuite(t *testing.T) {

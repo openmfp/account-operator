@@ -1,60 +1,29 @@
 package config
 
-import (
-	"time"
-
-	"github.com/vrischmann/envconfig"
-)
-
 // Config struct to hold the app config
 type Config struct {
-	DebugLabelValue string `envconfig:"optional"`
-	Log             struct {
-		Level  string `envconfig:"default=info"`
-		NoJson bool   `envconfig:"default=false"`
-	}
-	ShutdownTimeout time.Duration `envconfig:"default=1s"`
-	EnableHttp2     bool          `envconfig:"default=false"`
-	Metrics         struct {
-		BindAddress string `envconfig:"default=:8080"`
-		Secure      bool   `envconfig:"default=false"`
-	}
 	Webhooks struct {
-		Enabled bool   `envconfig:"default=false"`
-		CertDir string `envconfig:"default=certs,optional"`
-	}
-	Probes struct {
-		BindAddress string `envconfig:"default=:8081"`
-	}
-	LeaderElection struct {
-		Enabled bool `envconfig:"default=false"`
-	}
+		Enabled bool   `mapstructure:"webhooks--enabled"`
+		CertDir string `mapstructure:"webhooks-cert-dir"`
+	} `mapstructure:"subroutines-workspace-enabled"`
 	Subroutines struct {
 		Workspace struct {
-			Enabled bool `envconfig:"default=true"`
-		}
+			Enabled bool `mapstructure:"subroutines-workspace-enabled"`
+		} `mapstructure:",squash"`
 		AccountInfo struct {
-			Enabled bool `envconfig:"default=true"`
-		}
+			Enabled bool `mapstructure:"subroutines-account-info-enabled"`
+		} `mapstructure:",squash"`
 		FGA struct {
-			Enabled         bool   `envconfig:"default=true"`
-			RootNamespace   string `envconfig:"default=openmfp-root"`
-			GrpcAddr        string `envconfig:"default=localhost:8081"`
-			ObjectType      string `envconfig:"default=account"`
-			ParentRelation  string `envconfig:"default=parent"`
-			CreatorRelation string `envconfig:"default=owner"`
-		}
+			Enabled         bool   `mapstructure:"subroutines-fga-enabled"`
+			RootNamespace   string `mapstructure:"subroutines-fga-root-namespace"`
+			GrpcAddr        string `mapstructure:"subroutines-fga-grpc-addr"`
+			ObjectType      string `mapstructure:"subroutines-fga-object-type"`
+			ParentRelation  string `mapstructure:"subroutines-fga-parent-relation"`
+			CreatorRelation string `mapstructure:"subroutines-fga-creator-relation"`
+		} `mapstructure:",squash"`
 	}
-	MaxConcurrentReconciles int `envconfig:"default=10"`
-	Kcp                     struct {
-		ApiExportEndpointSliceName string `envconfig:"optional"`
-		ProviderWorkspace          string `envconfig:"optional,default=root"`
-	}
-}
-
-// NewFromEnv creates a Config from environment values
-func NewFromEnv() (Config, error) {
-	appConfig := Config{}
-	err := envconfig.Init(&appConfig)
-	return appConfig, err
+	Kcp struct {
+		ApiExportEndpointSliceName string `mapstructure:"kcp-api-export-endpoint-slice-name"`
+		ProviderWorkspace          string `mapstructure:"kcp-provider-workspace"`
+	} `mapstructure:",squash"`
 }
