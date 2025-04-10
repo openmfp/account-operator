@@ -7,14 +7,13 @@ replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime 
 require (
 	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
-	github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514
+	github.com/openfga/api/proto v0.0.0-20250127102726-f9709139a369
 	github.com/openmfp/golang-commons v0.146.3
 	github.com/otiai10/copy v1.14.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	github.com/vrischmann/envconfig v1.4.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0
 	golang.org/x/sys v0.31.0
 	google.golang.org/grpc v1.71.1
