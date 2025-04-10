@@ -50,7 +50,7 @@ func (suite *AccountInfoSubroutineTestSuite) SetupTest() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme.Scheme))
 
-	cfg := config.Config{}
+	cfg := config.OperatorConfig{}
 	var err error
 	suite.log, err = logger.New(logger.DefaultConfig())
 	suite.Require().NoError(err)

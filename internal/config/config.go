@@ -1,7 +1,7 @@
 package config
 
-// Config struct to hold the app config
-type Config struct {
+// OperatorConfig struct to hold the app config
+type OperatorConfig struct {
 	Webhooks struct {
 		Enabled bool   `mapstructure:"webhooks--enabled"`
 		CertDir string `mapstructure:"webhooks-cert-dir"`

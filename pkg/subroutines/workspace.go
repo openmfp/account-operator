@@ -64,7 +64,7 @@ func (r *WorkspaceSubroutine) Finalizers() []string { // coverage-ignore
 
 func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*corev1alpha1.Account)
-	cfg := commonconfig.LoadConfigFromContext(ctx).(config.Config)
+	cfg := commonconfig.LoadConfigFromContext(ctx).(config.OperatorConfig)
 
 	// Test if namespace was already created based on status
 	createdWorkspace := &kcptenancyv1alpha.Workspace{ObjectMeta: metav1.ObjectMeta{Name: instance.Name}}
