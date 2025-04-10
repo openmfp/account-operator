@@ -9,7 +9,7 @@ vars:
   CRD_DIRECTORY: config/crd
   TEST_SETUP_DIRECTORY: test/setup/01-openmfp-system
   KCP_APIGEN_VERSION: v0.21.0
-  KCP_VERSION: 0.26.1
+  KCP_VERSION: 0.27.1
   GOMPLATE_VERSION: v4.3.0
   GOARCH:
     sh: go env GOARCH
