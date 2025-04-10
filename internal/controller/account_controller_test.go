@@ -10,6 +10,7 @@ import (
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
+	openmfpconfig "github.com/openmfp/golang-commons/config"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/stretchr/testify/suite"
@@ -60,11 +61,14 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.log = log
 	ctrl.SetLogger(log.Logr())
 
-	cfg, err := config.NewFromEnv()
+	cfg := config.Config{}
 	cfg.Subroutines.FGA.Enabled = false
+	cfg.Subroutines.Workspace.Enabled = true
+	cfg.Subroutines.AccountInfo.Enabled = true
+	cfg.Kcp.ProviderWorkspace = "root"
 	suite.Require().NoError(err)
 
-	testContext, cancel, _ := openmfpcontext.StartContext(log, cfg, cfg.ShutdownTimeout)
+	testContext, cancel, _ := openmfpcontext.StartContext(log, cfg, 1*time.Minute)
 	suite.cancel = cancel
 
 	testEnvLogger := log.ComponentLogger("kcpenvtest")
@@ -110,9 +114,9 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	mockClient := mocks.NewOpenFGAServiceClient(suite.T())
-	// mockClient.On("Write", mock.Anything, mock.Anything).Return(nil, nil)
 	accountReconciler := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg, mockClient)
-	err = accountReconciler.SetupWithManager(suite.kubernetesManager, cfg, log)
+	dCfg := &openmfpconfig.CommonServiceConfig{}
+	err = accountReconciler.SetupWithManager(suite.kubernetesManager, dCfg, log)
 	suite.Require().NoError(err)
 
 	go suite.startController(testContext)
