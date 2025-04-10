@@ -17,7 +17,6 @@ import (
 
 var (
 	scheme      = runtime.NewScheme()
-	setupLog    = ctrl.Log.WithName("setup")
 	operatorCfg config.OperatorConfig
 	defaultCfg  *openmfpconfig.CommonServiceConfig
 	v           *viper.Viper
@@ -79,7 +78,6 @@ func initLog() { // coverage-ignore
 		panic(err)
 	}
 	ctrl.SetLogger(log.Logr())
-	setupLog = ctrl.Log.WithName("setup") // coverage-ignore
 }
 
 func Execute() { // coverage-ignore
