@@ -18,7 +18,7 @@ import (
 var (
 	scheme      = runtime.NewScheme()
 	setupLog    = ctrl.Log.WithName("setup")
-	operatorCfg config.Config
+	operatorCfg config.OperatorConfig
 	defaultCfg  *openmfpconfig.CommonServiceConfig
 	v           *viper.Viper
 	log         *logger.Logger

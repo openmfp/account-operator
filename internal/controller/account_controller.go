@@ -42,7 +42,7 @@ type AccountReconciler struct {
 	lifecycle *lifecycle.LifecycleManager
 }
 
-func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Config, fgaClient openfgav1.OpenFGAServiceClient) *AccountReconciler {
+func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.OperatorConfig, fgaClient openfgav1.OpenFGAServiceClient) *AccountReconciler {
 	var subs []lifecycle.Subroutine
 	if cfg.Subroutines.Workspace.Enabled {
 		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
