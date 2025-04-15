@@ -21,7 +21,7 @@ type OperatorConfig struct {
 			ParentRelation  string `mapstructure:"subroutines-fga-parent-relation"`
 			CreatorRelation string `mapstructure:"subroutines-fga-creator-relation"`
 		} `mapstructure:",squash"`
-	}
+	} `mapstructure:",squash"`
 	Kcp struct {
 		ApiExportEndpointSliceName string `mapstructure:"kcp-api-export-endpoint-slice-name"`
 		ProviderWorkspace          string `mapstructure:"kcp-provider-workspace"`
