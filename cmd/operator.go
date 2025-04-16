@@ -71,6 +71,7 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
 		CertDir: operatorCfg.Webhooks.CertDir,
+		Port:    operatorCfg.Webhooks.Port,
 	})
 	restCfg := ctrl.GetConfigOrDie()
 	opts := ctrl.Options{

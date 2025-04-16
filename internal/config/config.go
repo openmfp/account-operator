@@ -3,8 +3,9 @@ package config
 // OperatorConfig struct to hold the app config
 type OperatorConfig struct {
 	Webhooks struct {
-		Enabled bool   `mapstructure:"webhooks--enabled"`
+		Enabled bool   `mapstructure:"webhooks-enabled"`
 		CertDir string `mapstructure:"webhooks-cert-dir"`
+		Port    int    `mapstructure:"webhooks-port"`
 	} `mapstructure:",squash"`
 	Subroutines struct {
 		Workspace struct {

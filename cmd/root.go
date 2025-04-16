@@ -55,6 +55,7 @@ func init() {
 func initConfig() {
 	v.SetDefault("webhooks-enabled", "false")
 	v.SetDefault("webhooks-cert-dir", "certs")
+	v.SetDefault("webhooks-port", "9443")
 	v.SetDefault("subroutines-workspace-enabled", true)
 	v.SetDefault("subroutines-account-info-enabled", true)
 	v.SetDefault("subroutines-fga-enabled", true)
