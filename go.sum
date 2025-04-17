@@ -138,8 +138,6 @@ github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514 h1:ebCcwMV9LTbAG
 github.com/openfga/api/proto v0.0.0-20241104193559-ee46d6721514/go.mod h1:gil5LBD8tSdFQbUkCQdnXsoeU9kDJdJgbGdHkgJfcd0=
 github.com/openmfp/golang-commons v0.147.1 h1:ZYzqBt03p9u8RHMRK0/L0UEyP4k8JvTEPyQYMkT/dZ0=
 github.com/openmfp/golang-commons v0.147.1/go.mod h1:cMdMGfo56IMogXQv1fkuRdNl/TN/P3MffXWdgnzlpbA=
-github.com/openmfp/golang-commons v0.147.0 h1:P+1MA6dbg1EWg5xWv/ltGqrY0mPVKkuMLO9NB7XyiLU=
-github.com/openmfp/golang-commons v0.147.0/go.mod h1:ZSy1B6XS1Y07LGUuS5zwhK+x1bxL7KOMz+cMSIUiloA=
 github.com/otiai10/copy v1.14.1 h1:5/7E6qsUMBaH5AnQ0sSLzzTg1oTECmcCmT6lvF45Na8=
 github.com/otiai10/copy v1.14.1/go.mod h1:oQwrEDDOci3IM8dJF0d8+jnbfPDllW6vUjNc3DoZm9I=
 github.com/otiai10/mint v1.6.3 h1:87qsV/aw1F5as1eH1zS/yqHY85ANKVMgkDrf9rcxbQs=
