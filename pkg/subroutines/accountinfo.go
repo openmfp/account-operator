@@ -41,12 +41,16 @@ func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(_ context.Context, _ lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
+	if len(ro.GetFinalizers()) > 1 {
+		return ctrl.Result{Requeue: true}, nil
+	}
 	return ctrl.Result{}, nil
 }
 
 func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
-	return []string{}
+	return []string{"account.core.openmfp.org/info"}
 }
 
 func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
