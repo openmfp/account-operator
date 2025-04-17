@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
@@ -357,16 +356,22 @@ func (suite *AccountInfoSubroutineTestSuite) TestGetFinalizerName() {
 	finalizers := suite.testObj.Finalizers()
 
 	// Then
-	suite.Len(finalizers, 0)
+	suite.Len(finalizers, 1)
 }
 
 func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 	// When
-	res, err := suite.testObj.Finalize(context.Background(), &v1alpha1.Account{})
+	res, err := suite.testObj.Finalize(context.Background(), &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name:       "example-account",
+			Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+		},
+	})
 
 	// Then
 	suite.Nil(err)
-	suite.Equal(ctrl.Result{}, res)
+	suite.True(res.Requeue)
+	suite.Equal(time.Duration(0), res.RequeueAfter)
 }
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfoCallNotFound() *mocks.Client_Get_Call {
