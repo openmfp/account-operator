@@ -164,7 +164,7 @@ func (suite *AccountTestSuite) TestAddingFinalizer() {
 		return err == nil && createdAccount.Finalizers != nil
 	}, defaultTestTimeout, defaultTickInterval)
 
-	suite.Equal([]string{"account.core.openmfp.org/finalizer" /* , "account.core.openmfp.org/fga" */}, createdAccount.ObjectMeta.Finalizers)
+	suite.Equal([]string{"account.core.openmfp.org/finalizer", "account.core.openmfp.org/info"}, createdAccount.ObjectMeta.Finalizers)
 }
 
 func (suite *AccountTestSuite) TestWorkspaceCreation() {
