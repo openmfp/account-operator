@@ -376,10 +376,12 @@ func (suite *AccountInfoSubroutineTestSuite) TestGetFinalizerName() {
 
 func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 	// When
+	deletionTS := v1.NewTime(time.Now())
 	res, err := suite.testObj.Finalize(context.Background(), &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
-			Name:       "example-account",
-			Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+			Name:              "example-account",
+			Finalizers:        []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+			DeletionTimestamp: &deletionTS,
 		},
 	})
 
@@ -387,6 +389,22 @@ func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 	suite.Nil(err)
 	suite.True(res.Requeue)
 	suite.Equal(time.Duration(0), res.RequeueAfter)
+}
+
+func (suite *AccountInfoSubroutineTestSuite) TestFinalizeBackoff() {
+	// When
+	deletionTS := v1.Time{}
+	res, err := suite.testObj.Finalize(context.Background(), &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "example-account",
+			Finalizers:        []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+			DeletionTimestamp: &deletionTS,
+		},
+	})
+
+	// Then
+	suite.NotNil(err)
+	suite.False(res.Requeue)
 }
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfoCallNotFound() *mocks.Client_Get_Call {

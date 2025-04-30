@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
@@ -41,11 +42,36 @@ func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(ctx context.Context, ro lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	// check if deletion is older than a minute and enter exponential backoff
+	deletionTimestamp := *ro.GetDeletionTimestamp()
+	oneMinAgo := v1.Now().Add(-1 * time.Minute)
+	requeue := true
+	if deletionTimestamp.Time.Before(oneMinAgo) {
+		requeue = false
+	}
+
 	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
 	if len(ro.GetFinalizers()) > 1 {
-		return ctrl.Result{Requeue: true}, nil
+		if requeue {
+			return ctrl.Result{Requeue: true}, nil
+		}
+		return ctrl.Result{}, errors.NewOperatorError(errors.New("finalizer not removed yet"), true, false)
 	}
+
+	// The account info object is also relevant for finalization of child accounts. prevent deletion of it until the child accounts are deleted.
+	accountList := &v1alpha1.AccountList{}
+	err := r.client.List(ctx, accountList)
+	if err != nil {
+		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
+	}
+	if len(accountList.Items) > 0 {
+		if requeue {
+			return ctrl.Result{Requeue: true}, nil
+		}
+		return ctrl.Result{}, errors.NewOperatorError(errors.New("finalizer not removed yet"), true, false)
+	}
+
 	return ctrl.Result{}, nil
 }
 
