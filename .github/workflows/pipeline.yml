@@ -20,4 +20,4 @@ jobs:
       useTask: true
       useLocalCoverageConfig: true
       repoVersionUpdate: openmfp/helm-charts
-      coverageThreasholdTotal: 92
+      coverageThresholdTotal: 92
