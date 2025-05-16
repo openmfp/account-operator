@@ -74,7 +74,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("account cluster id is empty"), true, true)
 	}
 
-	if accountInfo.Spec.ParentAccount.ClusterId == "" {
+	if account.Spec.Type != v1alpha1.AccountTypeOrg && accountInfo.Spec.ParentAccount.ClusterId == "" {
 		log.Error().Msg("parent account cluster id is empty")
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("parent account cluster id is empty"), true, true)
 	}
