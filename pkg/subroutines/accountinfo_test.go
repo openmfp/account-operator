@@ -79,18 +79,18 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 				CA: "some-ca",
 			},
 			Organization: v1alpha1.AccountLocation{
-				Name:      "root-org",
-				ClusterId: "some-cluster-id-root-org",
-				Path:      "root:openmfp:orgs:root-org",
-				URL:       "https://example.com/root:openmfp:orgs:root-org",
-				Type:      "org",
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				Path:               "root:openmfp:orgs:root-org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
+				Type:               "org",
 			},
 			Account: v1alpha1.AccountLocation{
-				Name:      "root-org",
-				ClusterId: "some-cluster-id-root-org",
-				Path:      "root:openmfp:orgs:root-org",
-				URL:       "https://example.com/root:openmfp:orgs:root-org",
-				Type:      "org",
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				Path:               "root:openmfp:orgs:root-org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
+				Type:               "org",
 			},
 		},
 	}
@@ -244,25 +244,25 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 		Spec: v1alpha1.AccountInfoSpec{
 			ClusterInfo: v1alpha1.ClusterInfo{CA: "some-ca"},
 			Organization: v1alpha1.AccountLocation{
-				Name:      "root-org",
-				ClusterId: "some-cluster-id-root-org",
-				Path:      "root:openmfp:orgs:root-org",
-				Type:      "org",
-				URL:       "https://example.com/root:openmfp:orgs:root-org",
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				Path:               "root:openmfp:orgs:root-org",
+				Type:               "org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
 			},
 			Account: v1alpha1.AccountLocation{
-				Name:      "example-account",
-				ClusterId: "some-cluster-id-example-account",
-				Path:      "root:openmfp:orgs:root-org:example-account",
-				Type:      "account",
-				URL:       "https://example.com/root:openmfp:orgs:root-org:example-account",
+				Name:               "example-account",
+				GeneratedClusterId: "some-cluster-id-example-account",
+				Path:               "root:openmfp:orgs:root-org:example-account",
+				Type:               "account",
+				URL:                "https://example.com/root:openmfp:orgs:root-org:example-account",
 			},
 			ParentAccount: &v1alpha1.AccountLocation{
-				Name:      "root-org",
-				ClusterId: "some-cluster-id-root-org",
-				Path:      "root:openmfp:orgs:root-org",
-				URL:       "https://example.com/root:openmfp:orgs:root-org",
-				Type:      "org",
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				Path:               "root:openmfp:orgs:root-org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
+				Type:               "org",
 			},
 			FGA: v1alpha1.FGAInfo{
 				Store: v1alpha1.StoreInfo{
@@ -296,6 +296,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_No_Parent
 	testAccount := &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "example-account",
+			Annotations: map[string]string{
+				"kcp.io/cluster": "asd",
+			},
 		},
 		Spec: v1alpha1.AccountSpec{
 			Type: v1alpha1.AccountTypeAccount,

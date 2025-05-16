@@ -34,11 +34,12 @@ type ClusterInfo struct {
 }
 
 type AccountLocation struct {
-	Name      string      `json:"name"`
-	ClusterId string      `json:"clusterId"`
-	Path      string      `json:"path"`
-	URL       string      `json:"url"`
-	Type      AccountType `json:"type"`
+	Name               string      `json:"name"`
+	GeneratedClusterId string      `json:"generatedClusterId"`
+	OriginClusterId    string      `json:"originClusterId"`
+	Path               string      `json:"path"`
+	URL                string      `json:"url"`
+	Type               AccountType `json:"type"`
 }
 
 type FGAInfo struct {
