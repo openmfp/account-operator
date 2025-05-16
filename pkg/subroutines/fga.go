@@ -69,12 +69,12 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
 	}
 
-	if accountInfo.Spec.Account.ClusterId == "" {
+	if accountInfo.Spec.Account.GeneratedClusterId == "" {
 		log.Error().Msg("account cluster id is empty")
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("account cluster id is empty"), true, true)
 	}
 
-	if account.Spec.Type != v1alpha1.AccountTypeOrg && accountInfo.Spec.ParentAccount.ClusterId == "" {
+	if account.Spec.Type != v1alpha1.AccountTypeOrg && accountInfo.Spec.ParentAccount.GeneratedClusterId == "" {
 		log.Error().Msg("parent account cluster id is empty")
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("parent account cluster id is empty"), true, true)
 	}
@@ -87,9 +87,9 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 		// Determine parent account to create parent relation
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.GetName()),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
 			Relation: e.parentRelation,
-			User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.ClusterId, parentAccountName),
+			User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.OriginClusterId, parentAccountName),
 		})
 	}
 
@@ -103,15 +103,15 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		creator := formatUser(*account.Spec.Creator)
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.ClusterId, account.Name),
+			Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.OriginClusterId, account.Name),
 			Relation: "assignee",
 			User:     fmt.Sprintf("user:%s", creator),
 		})
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.Name),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.Name),
 			Relation: e.creatorRelation,
-			User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.ClusterId, account.Name),
+			User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.OriginClusterId, account.Name),
 		})
 	}
 
@@ -159,24 +159,24 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 			parentAccountName := accountInfo.Spec.Account.Name
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.GetName()),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
 				Relation: e.parentRelation,
-				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.ClusterId, parentAccountName),
+				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.OriginClusterId, parentAccountName),
 			})
 		}
 
 		if account.Spec.Creator != nil {
 			creator := formatUser(*account.Spec.Creator)
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.ClusterId, account.Name),
+				Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.OriginClusterId, account.Name),
 				Relation: "assignee",
 				User:     fmt.Sprintf("user:%s", creator),
 			})
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.Name),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.Name),
 				Relation: e.creatorRelation,
-				User:     fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
+				User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.OriginClusterId, account.Name),
 			})
 		}
 

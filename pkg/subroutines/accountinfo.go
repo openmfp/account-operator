@@ -77,7 +77,18 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	selfAccountLocation := v1alpha1.AccountLocation{Name: instance.Name, ClusterId: accountWorkspace.Spec.Cluster, Type: instance.Spec.Type, Path: currentWorkspacePath, URL: currentWorkspaceUrl}
+	originCluster, ok := instance.GetAnnotations()["kcp.io/cluster"]
+	if !ok {
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("origin cluster not found"), true, false)
+	}
+	selfAccountLocation := v1alpha1.AccountLocation{
+		Name:               instance.Name,
+		GeneratedClusterId: accountWorkspace.Spec.Cluster,
+		OriginClusterId:    originCluster,
+		Type:               instance.Spec.Type,
+		Path:               currentWorkspacePath,
+		URL:                currentWorkspaceUrl,
+	}
 
 	if instance.Spec.Type == v1alpha1.AccountTypeOrg {
 		accountInfo := &v1alpha1.AccountInfo{ObjectMeta: v1.ObjectMeta{Name: DefaultAccountInfoName}}
