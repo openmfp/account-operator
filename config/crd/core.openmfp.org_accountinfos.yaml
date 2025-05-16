@@ -41,9 +41,11 @@ spec:
             properties:
               account:
                 properties:
-                  clusterId:
+                  generatedClusterId:
                     type: string
                   name:
+                    type: string
+                  originClusterId:
                     type: string
                   path:
                     type: string
@@ -52,8 +54,9 @@ spec:
                   url:
                     type: string
                 required:
-                - clusterId
+                - generatedClusterId
                 - name
+                - originClusterId
                 - path
                 - type
                 - url
@@ -79,9 +82,11 @@ spec:
                 type: object
               organization:
                 properties:
-                  clusterId:
+                  generatedClusterId:
                     type: string
                   name:
+                    type: string
+                  originClusterId:
                     type: string
                   path:
                     type: string
@@ -90,17 +95,20 @@ spec:
                   url:
                     type: string
                 required:
-                - clusterId
+                - generatedClusterId
                 - name
+                - originClusterId
                 - path
                 - type
                 - url
                 type: object
               parentAccount:
                 properties:
-                  clusterId:
+                  generatedClusterId:
                     type: string
                   name:
+                    type: string
+                  originClusterId:
                     type: string
                   path:
                     type: string
@@ -109,8 +117,9 @@ spec:
                   url:
                     type: string
                 required:
-                - clusterId
+                - generatedClusterId
                 - name
+                - originClusterId
                 - path
                 - type
                 - url
