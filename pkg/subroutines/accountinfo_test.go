@@ -65,6 +65,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 	testAccount := &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "root-org",
+			Annotations: map[string]string{
+				"kcp.io/cluster": "asd",
+			},
 		},
 		Spec: v1alpha1.AccountSpec{
 			Type: v1alpha1.AccountTypeOrg,
@@ -81,6 +84,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 			Organization: v1alpha1.AccountLocation{
 				Name:               "root-org",
 				GeneratedClusterId: "some-cluster-id-root-org",
+				OriginClusterId:    "asd",
 				Path:               "root:openmfp:orgs:root-org",
 				URL:                "https://example.com/root:openmfp:orgs:root-org",
 				Type:               "org",
@@ -88,6 +92,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 			Account: v1alpha1.AccountLocation{
 				Name:               "root-org",
 				GeneratedClusterId: "some-cluster-id-root-org",
+				OriginClusterId:    "asd",
 				Path:               "root:openmfp:orgs:root-org",
 				URL:                "https://example.com/root:openmfp:orgs:root-org",
 				Type:               "org",
@@ -232,6 +237,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 	testAccount := &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "example-account",
+			Annotations: map[string]string{
+				"kcp.io/cluster": "asd",
+			},
 		},
 		Spec: v1alpha1.AccountSpec{
 			Type: v1alpha1.AccountTypeAccount,
@@ -253,6 +261,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 			Account: v1alpha1.AccountLocation{
 				Name:               "example-account",
 				GeneratedClusterId: "some-cluster-id-example-account",
+				OriginClusterId:    "asd",
 				Path:               "root:openmfp:orgs:root-org:example-account",
 				Type:               "account",
 				URL:                "https://example.com/root:openmfp:orgs:root-org:example-account",
@@ -325,6 +334,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_Parent_Lo
 	testAccount := &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
 			Name: "example-account",
+			Annotations: map[string]string{
+				"kcp.io/cluster": "asd",
+			},
 		},
 		Spec: v1alpha1.AccountSpec{
 			Type: v1alpha1.AccountTypeAccount,
