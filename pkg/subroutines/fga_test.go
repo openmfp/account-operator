@@ -61,6 +61,9 @@ func TestFGASubroutine_Process(t *testing.T) {
 		{
 			name: "should_skip_processing_if_subroutine_ran_before",
 			account: &v1alpha1.Account{
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeOrg,
+				},
 				Status: v1alpha1.AccountStatus{
 					Conditions: []metav1.Condition{
 						{
@@ -69,6 +72,38 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 					},
 				},
+			},
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
+				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "root-org",
+						},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
+						},
+					}
+
+					return nil
+				}).Once()
 			},
 		},
 		{
@@ -131,6 +166,9 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Name:      "test-account",
 					Namespace: "test-namespace",
 				},
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeAccount,
+				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
@@ -144,19 +182,24 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							ParentAccount: &v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
-							Account: v1alpha1.AccountLocation{},
-							FGA:     v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
+							Account: v1alpha1.AccountLocation{
+								Name:      "test-account",
+								ClusterId: "test-account-id",
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
 					}
 
@@ -172,6 +215,9 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Name:      "test-account",
 					Namespace: "test-namespace",
 				},
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeAccount,
+				},
 			},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
@@ -185,22 +231,22 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							ParentAccount: &v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							Account: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "test-account",
+								ClusterId: "test-account-id",
 							},
 							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
@@ -220,7 +266,9 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Name:      "test-account",
 					Namespace: "test-namespace",
 				},
-			},
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeAccount,
+				}},
 			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
@@ -233,22 +281,22 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							ParentAccount: &v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							Account: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "test-account",
+								ClusterId: "test-account-id",
 							},
 							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
@@ -269,6 +317,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: v1alpha1.AccountSpec{
+					Type:    v1alpha1.AccountTypeAccount,
 					Creator: ptr.To("system:serviceaccount:some-namespace:some-service-account"),
 				},
 			},
@@ -284,22 +333,22 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							ParentAccount: &v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							Account: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "test-account",
+								ClusterId: "test-account-id",
 							},
 							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
@@ -377,6 +426,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: v1alpha1.AccountSpec{
+					Type:    v1alpha1.AccountTypeOrg,
 					Creator: &creator,
 				},
 			},
@@ -392,22 +442,22 @@ func TestFGASubroutine_Process(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							ParentAccount: &v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "root-org",
+								ClusterId: "root-org",
+								Path:      "root:openmfp:org:root-org",
+								URL:       "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:      v1alpha1.AccountTypeOrg,
 							},
 							Account: v1alpha1.AccountLocation{
-								Name: "root-org",
-								Path: "root:openmfp:org:root-org",
-								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
-								Type: v1alpha1.AccountTypeOrg,
+								Name:      "test-account",
+								ClusterId: "test-account-id",
 							},
 							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
@@ -532,6 +582,12 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
 								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
 							Account: v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
@@ -569,6 +625,12 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
@@ -615,6 +677,12 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
 								Type: v1alpha1.AccountTypeOrg,
 							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
 							Account: v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
@@ -655,6 +723,12 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 						},
 						Spec: v1alpha1.AccountInfoSpec{
 							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
 								Name: "root-org",
 								Path: "root:openmfp:org:root-org",
 								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
