@@ -45,11 +45,6 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 	log := logger.LoadLoggerFromContext(ctx)
 	log.Debug().Msg("Starting creator subroutine process() function")
 
-	if meta.IsStatusConditionTrue(account.Status.Conditions, fmt.Sprintf("%s_Ready", e.GetName())) {
-		log.Debug().Msgf("Owner has already been written for account: %s", account.GetName())
-		return ctrl.Result{}, nil
-	}
-
 	accountWorkspace, err := retrieveWorkspace(ctx, account, e.client, log)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
@@ -74,10 +69,14 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
 	}
 
-	clusterId, ok := kontext.ClusterFrom(ctx)
-	if !ok {
-		log.Error().Msg("Couldn't get Cluster Id")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("couldn't get cluster id"), true, true)
+	if accountInfo.Spec.Account.ClusterId == "" {
+		log.Error().Msg("account cluster id is empty")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("account cluster id is empty"), true, true)
+	}
+
+	if accountInfo.Spec.ParentAccount.ClusterId == "" {
+		log.Error().Msg("parent account cluster id is empty")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("parent account cluster id is empty"), true, true)
 	}
 
 	writes := []*openfgav1.TupleKey{}
@@ -88,14 +87,15 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 		// Determine parent account to create parent relation
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.GetName()),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.GetName()),
 			Relation: e.parentRelation,
-			User:     fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, parentAccountName),
+			User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.ClusterId, parentAccountName),
 		})
 	}
 
 	// Assign creator to the account
-	if account.Spec.Creator != nil {
+	creatorTuplesWritten := meta.IsStatusConditionTrue(account.Status.Conditions, fmt.Sprintf("%s_Ready", e.GetName()))
+	if account.Spec.Creator != nil && !creatorTuplesWritten {
 		if valid := validateCreator(*account.Spec.Creator); !valid {
 			log.Error().Err(err).Str("creator", *account.Spec.Creator).Msg("creator string is in the protected service account prefix range")
 			return ctrl.Result{}, errors.NewOperatorError(err, false, false)
@@ -103,15 +103,15 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		creator := formatUser(*account.Spec.Creator)
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("role:%s/%s/owner", clusterId, account.Name),
+			Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.ClusterId, account.Name),
 			Relation: "assignee",
 			User:     fmt.Sprintf("user:%s", creator),
 		})
 
 		writes = append(writes, &openfgav1.TupleKey{
-			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.Name),
+			Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.Name),
 			Relation: e.creatorRelation,
-			User:     fmt.Sprintf("role:%s/%s/owner#assignee", clusterId, account.Name),
+			User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.ClusterId, account.Name),
 		})
 	}
 
@@ -143,44 +143,38 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 
 	// Skip fga account finalization for organizations because the store is removed completely
 	if account.Spec.Type != v1alpha1.AccountTypeOrg {
-		parentAccountInfo, err := e.getAccountInfo(ctx)
+		accountInfo, err := e.getAccountInfo(ctx)
 		if err != nil {
 			log.Error().Err(err).Msg("Couldn't get Store Id")
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 
-		if parentAccountInfo.Spec.FGA.Store.Id == "" {
+		if accountInfo.Spec.FGA.Store.Id == "" {
 			log.Error().Msg("FGA Store Id is empty")
 			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("FGA Store Id is empty"), true, true)
 		}
 
-		clusterId, ok := kontext.ClusterFrom(ctx)
-		if !ok {
-			log.Error().Msg("Couldn't get Cluster Id")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("couldn't get cluster id"), true, true)
-		}
-
 		deletes := []*openfgav1.TupleKeyWithoutCondition{}
 		if account.Spec.Type != v1alpha1.AccountTypeOrg {
-			parentAccountName := parentAccountInfo.Spec.Account.Name
+			parentAccountName := accountInfo.Spec.Account.Name
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.GetName()),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.GetName()),
 				Relation: e.parentRelation,
-				User:     fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, parentAccountName),
+				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.ClusterId, parentAccountName),
 			})
 		}
 
 		if account.Spec.Creator != nil {
 			creator := formatUser(*account.Spec.Creator)
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("role:%s/%s/owner", clusterId, account.Name),
+				Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.ClusterId, account.Name),
 				Relation: "assignee",
 				User:     fmt.Sprintf("user:%s", creator),
 			})
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, clusterId, account.Name),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.ClusterId, account.Name),
 				Relation: e.creatorRelation,
 				User:     fmt.Sprintf("role:%s/%s/owner#assignee", account.Spec.Type, account.Name),
 			})
@@ -189,7 +183,7 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 		for _, deleteTuple := range deletes {
 
 			_, err = e.fgaClient.Write(ctx, &openfgav1.WriteRequest{
-				StoreId: parentAccountInfo.Spec.FGA.Store.Id,
+				StoreId: accountInfo.Spec.FGA.Store.Id,
 				Deletes: &openfgav1.WriteRequestDeletes{
 					TupleKeys: []*openfgav1.TupleKeyWithoutCondition{deleteTuple},
 				},
