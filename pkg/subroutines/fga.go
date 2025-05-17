@@ -159,24 +159,24 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 			parentAccountName := accountInfo.Spec.Account.Name
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
+				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, parentAccountName),
 				Relation: e.parentRelation,
-				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.OriginClusterId, parentAccountName),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.GeneratedClusterId, account.GetName()),
 			})
 		}
 
 		if account.Spec.Creator != nil {
 			creator := formatUser(*account.Spec.Creator)
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.OriginClusterId, account.Name),
+				Object:   fmt.Sprintf("role:%s/%s/owner", accountInfo.Spec.Account.GeneratedClusterId, account.Name),
 				Relation: "assignee",
 				User:     fmt.Sprintf("user:%s", creator),
 			})
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.Name),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.GeneratedClusterId, account.Name),
 				Relation: e.creatorRelation,
-				User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.OriginClusterId, account.Name),
+				User:     fmt.Sprintf("role:%s/%s/owner#assignee", accountInfo.Spec.Account.GeneratedClusterId, account.Name),
 			})
 		}
 

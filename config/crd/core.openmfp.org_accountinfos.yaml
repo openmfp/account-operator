@@ -42,10 +42,15 @@ spec:
               account:
                 properties:
                   generatedClusterId:
+                    description: The GeneratedClusterId represents the cluster id
+                      of the workspace that was generated for a given account
                     type: string
                   name:
                     type: string
                   originClusterId:
+                    description: |-
+                      The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                      lead to this workspace
                     type: string
                   path:
                     type: string
@@ -83,10 +88,15 @@ spec:
               organization:
                 properties:
                   generatedClusterId:
+                    description: The GeneratedClusterId represents the cluster id
+                      of the workspace that was generated for a given account
                     type: string
                   name:
                     type: string
                   originClusterId:
+                    description: |-
+                      The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                      lead to this workspace
                     type: string
                   path:
                     type: string
@@ -105,10 +115,15 @@ spec:
               parentAccount:
                 properties:
                   generatedClusterId:
+                    description: The GeneratedClusterId represents the cluster id
+                      of the workspace that was generated for a given account
                     type: string
                   name:
                     type: string
                   originClusterId:
+                    description: |-
+                      The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                      lead to this workspace
                     type: string
                   path:
                     type: string
