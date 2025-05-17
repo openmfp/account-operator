@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250516-0b27c30.accountinfos.core.openmfp.org
+  name: v250517-3127093.accountinfos.core.openmfp.org
 spec:
   group: core.openmfp.org
   names:
@@ -39,10 +39,15 @@ spec:
             account:
               properties:
                 generatedClusterId:
+                  description: The GeneratedClusterId represents the cluster id of
+                    the workspace that was generated for a given account
                   type: string
                 name:
                   type: string
                 originClusterId:
+                  description: |-
+                    The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                    lead to this workspace
                   type: string
                 path:
                   type: string
@@ -80,10 +85,15 @@ spec:
             organization:
               properties:
                 generatedClusterId:
+                  description: The GeneratedClusterId represents the cluster id of
+                    the workspace that was generated for a given account
                   type: string
                 name:
                   type: string
                 originClusterId:
+                  description: |-
+                    The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                    lead to this workspace
                   type: string
                 path:
                   type: string
@@ -102,10 +112,15 @@ spec:
             parentAccount:
               properties:
                 generatedClusterId:
+                  description: The GeneratedClusterId represents the cluster id of
+                    the workspace that was generated for a given account
                   type: string
                 name:
                   type: string
                 originClusterId:
+                  description: |-
+                    The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+                    lead to this workspace
                   type: string
                 path:
                   type: string

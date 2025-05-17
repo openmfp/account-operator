@@ -6,7 +6,7 @@ metadata:
 spec:
   latestResourceSchemas:
   - v250305-70de32b.accounts.core.openmfp.org
-  - v250516-0b27c30.accountinfos.core.openmfp.org
+  - v250517-3127093.accountinfos.core.openmfp.org
   permissionClaims:
   - all: true
     resource: namespaces

@@ -34,12 +34,15 @@ type ClusterInfo struct {
 }
 
 type AccountLocation struct {
-	Name               string      `json:"name"`
-	GeneratedClusterId string      `json:"generatedClusterId"`
-	OriginClusterId    string      `json:"originClusterId"`
-	Path               string      `json:"path"`
-	URL                string      `json:"url"`
-	Type               AccountType `json:"type"`
+	Name string `json:"name"`
+	// The GeneratedClusterId represents the cluster id of the workspace that was generated for a given account
+	GeneratedClusterId string `json:"generatedClusterId"`
+	// The OriginClusterId represents the cluster id of the workspace that holds the account resource that
+	// lead to this workspace
+	OriginClusterId string      `json:"originClusterId"`
+	Path            string      `json:"path"`
+	URL             string      `json:"url"`
+	Type            AccountType `json:"type"`
 }
 
 type FGAInfo struct {
