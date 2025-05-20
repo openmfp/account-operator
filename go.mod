@@ -15,7 +15,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0
-	golang.org/x/sys v0.32.0
+	golang.org/x/sys v0.33.0
 	google.golang.org/grpc v1.72.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.32.4
