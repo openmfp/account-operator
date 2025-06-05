@@ -10,7 +10,7 @@ import (
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
-	openmfpconfig "github.com/openmfp/golang-commons/config"
+	"github.com/kcp-dev/multicluster-provider/apiexport"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/openmfp/golang-commons/logger"
 	"github.com/stretchr/testify/suite"
@@ -23,7 +23,8 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -42,7 +43,7 @@ type AccountTestSuite struct {
 	suite.Suite
 
 	kubernetesClient  client.Client
-	kubernetesManager ctrl.Manager
+	kubernetesManager mcmanager.Manager
 	testEnv           *kcpenvtest.Environment
 	log               *logger.Logger
 	cancel            context.CancelCauseFunc
@@ -106,7 +107,10 @@ func (suite *AccountTestSuite) SetupSuite() {
 	})
 	suite.Require().NoError(err)
 
-	suite.kubernetesManager, err = kcp.NewClusterAwareManager(managerCfg, ctrl.Options{
+	provider, err := apiexport.New(managerCfg, apiexport.Options{})
+	suite.Require().NoError(err)
+
+	suite.kubernetesManager, err = mcmanager.New(managerCfg, provider, mcmanager.Options{
 		Scheme:      suite.scheme,
 		Logger:      log.Logr(),
 		BaseContext: func() context.Context { return testContext },
@@ -114,9 +118,11 @@ func (suite *AccountTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	mockClient := mocks.NewOpenFGAServiceClient(suite.T())
-	accountReconciler := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg, mockClient)
-	dCfg := &openmfpconfig.CommonServiceConfig{}
-	err = accountReconciler.SetupWithManager(suite.kubernetesManager, dCfg, log)
+	accountReconcilerFunc := controller.NewAccountReconciler(log, suite.kubernetesManager, cfg, mockClient)
+	err = mcbuilder.ControllerManagedBy(suite.kubernetesManager).
+		Named("account-controller").
+		For(&v1alpha1.Account{}).
+		Complete(accountReconcilerFunc)
 	suite.Require().NoError(err)
 
 	go suite.startController(testContext)

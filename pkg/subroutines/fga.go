@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/errors"
@@ -16,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
@@ -55,8 +53,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Prepare context to work in workspace
-	wsCtx := kontext.WithCluster(ctx, logicalcluster.Name(accountWorkspace.Spec.Cluster))
+	wsCtx := ctx
 
 	accountInfo, err := e.getAccountInfo(wsCtx)
 	if err != nil {

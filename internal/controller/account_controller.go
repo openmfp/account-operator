@@ -20,12 +20,11 @@ import (
 	"context"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	openmfpconfig "github.com/openmfp/golang-commons/config"
 	"github.com/openmfp/golang-commons/controller/lifecycle"
 	"github.com/openmfp/golang-commons/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -42,30 +41,32 @@ type AccountReconciler struct {
 	lifecycle *lifecycle.LifecycleManager
 }
 
-func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.OperatorConfig, fgaClient openfgav1.OpenFGAServiceClient) *AccountReconciler {
+func NewAccountReconciler(log *logger.Logger, mgr mcmanager.Manager, cfg config.OperatorConfig, fgaClient openfgav1.OpenFGAServiceClient) mcreconcile.Func {
+	localMgr := mgr.GetLocalManager()
+
 	var subs []lifecycle.Subroutine
 	if cfg.Subroutines.Workspace.Enabled {
-		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
+		subs = append(subs, subroutines.NewWorkspaceSubroutine(localMgr.GetClient()))
 	}
 	if cfg.Subroutines.AccountInfo.Enabled {
-		subs = append(subs, subroutines.NewAccountInfoSubroutine(mgr.GetClient(), string(mgr.GetConfig().CAData)))
+		subs = append(subs, subroutines.NewAccountInfoSubroutine(localMgr.GetClient(), string(localMgr.GetConfig().CAData)))
 	}
 	if cfg.Subroutines.FGA.Enabled {
-		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
+		subs = append(subs, subroutines.NewFGASubroutine(localMgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
-	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithConditionManagement(),
-	}
-}
 
-func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return r.lifecycle.Reconcile(ctx, req, &corev1alpha1.Account{})
-}
-
-func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, cfg *openmfpconfig.CommonServiceConfig, log *logger.Logger, eventPredicates ...predicate.Predicate) error {
-	builder, err := r.lifecycle.SetupWithManagerBuilder(mgr, cfg.MaxConcurrentReconciles, accountReconcilerName, &corev1alpha1.Account{}, cfg.DebugLabelValue, log, eventPredicates...)
-	if err != nil {
-		return err
+	reconciler := &AccountReconciler{
+		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, localMgr.GetClient(), subs).WithConditionManagement(),
 	}
-	return builder.Complete(kcp.WithClusterInContext(r))
+
+	return mcreconcile.Func(func(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
+		cluster, err := mgr.GetCluster(ctx, req.ClusterName)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		reconciler.lifecycle = lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, cluster.GetClient(), subs).WithConditionManagement()
+
+		return reconciler.lifecycle.Reconcile(ctx, req.Request, &corev1alpha1.Account{})
+	})
 }
