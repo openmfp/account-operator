@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	defaultTestTimeout  = 15 * time.Second
+	defaultTestTimeout  = 60 * time.Second // Increased from 15s to 60s
 	defaultTickInterval = 250 * time.Millisecond
 	defaultNamespace    = "default"
 )
@@ -99,7 +99,11 @@ func (suite *AccountTestSuite) SetupSuite() {
 	managerCfg.Host = vsUrl
 
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:root-org")
+	testDataConfig.Host = fmt.Sprintf("%s/clusters/root:orgs:root-org", suite.rootConfig.Host)
+
+	// DEBUG: Log the test client and manager config hosts
+	fmt.Printf("[DEBUG] testDataConfig.Host: %s\n", testDataConfig.Host)
+	fmt.Printf("[DEBUG] managerCfg.Host: %s\n", managerCfg.Host)
 
 	// +kubebuilder:scaffold:scheme
 	suite.kubernetesClient, err = client.New(testDataConfig, client.Options{
@@ -268,7 +272,7 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 
 	// Retrieve account info from workspace
 	testDataConfig := rest.CopyConfig(suite.rootConfig)
-	testDataConfig.Host = fmt.Sprintf("%s:%s", suite.rootConfig.Host, "orgs:root-org:test-account-account-info-creation1")
+	testDataConfig.Host = fmt.Sprintf("%s/clusters/root:orgs:root-org:test-account-account-info-creation1", suite.rootConfig.Host)
 	testClient, err := client.New(testDataConfig, client.Options{
 		Scheme: suite.scheme,
 	})

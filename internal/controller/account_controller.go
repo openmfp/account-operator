@@ -60,13 +60,23 @@ func NewAccountReconciler(log *logger.Logger, mgr mcmanager.Manager, cfg config.
 	}
 
 	return mcreconcile.Func(func(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
+		log.Info().Str("cluster", req.ClusterName).Str("name", req.Name).Msg("Reconciling Account resource")
+		// DEBUG: Log the incoming request
+		log.Debug().Interface("request", req).Msg("Received reconcile request")
 		cluster, err := mgr.GetCluster(ctx, req.ClusterName)
 		if err != nil {
+			log.Error().Err(err).Str("cluster", req.ClusterName).Msg("Failed to get cluster in reconcile")
 			return ctrl.Result{}, err
 		}
 
 		reconciler.lifecycle = lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, cluster.GetClient(), subs).WithConditionManagement()
 
-		return reconciler.lifecycle.Reconcile(ctx, req.Request, &corev1alpha1.Account{})
+		result, err := reconciler.lifecycle.Reconcile(ctx, req.Request, &corev1alpha1.Account{})
+		if err != nil {
+			log.Error().Err(err).Str("cluster", req.ClusterName).Str("name", req.Name).Msg("Reconcile error")
+		} else {
+			log.Debug().Str("cluster", req.ClusterName).Str("name", req.Name).Msg("Reconcile successful")
+		}
+		return result, err
 	})
 }
