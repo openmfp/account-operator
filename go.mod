@@ -2,6 +2,14 @@ module github.com/openmfp/account-operator
 
 go 1.24.3
 
+replace (
+	k8s.io/api => k8s.io/api v0.31.6
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.6
+	k8s.io/apimachinery => k8s.io/apimachinery v0.31.6
+	k8s.io/client-go => k8s.io/client-go v0.31.6
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
+)
+
 require (
 	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/multicluster-provider v0.1.0
@@ -98,7 +106,7 @@ require (
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250428153025-10db94c68c34 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250324211829-b45e905df463 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -108,12 +116,4 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
-)
-
-replace (
-	k8s.io/api => k8s.io/api v0.31.6
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.6
-	k8s.io/apimachinery => k8s.io/apimachinery v0.31.6
-	k8s.io/client-go => k8s.io/client-go v0.31.6
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
 )
