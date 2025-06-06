@@ -7,7 +7,6 @@ import (
 	kcpcorev1alpha1 "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	"github.com/stretchr/testify/assert"
@@ -485,7 +484,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 			}
 
 			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, "owner", "parent", "account")
-			ctx := kontext.WithCluster(context.Background(), "abcdefghi")
+			ctx := context.Background()
 			_, err := routine.Process(ctx, test.account)
 			if test.expectedError {
 				assert.NotNil(t, err)
@@ -766,7 +765,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 			}
 
 			routine := subroutines.NewFGASubroutine(k8sClient, openFGAClient, "owner", "parent", "account")
-			ctx := kontext.WithCluster(context.Background(), "abcdefghi")
+			ctx := context.Background()
 			_, err := routine.Finalize(ctx, test.account)
 			if test.expectedError {
 				assert.NotNil(t, err)

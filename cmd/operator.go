@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
+	"github.com/kcp-dev/multicluster-provider/apiexport"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
 	"github.com/spf13/cobra"
@@ -32,9 +33,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/controller"
@@ -89,9 +91,11 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		LeaderElectionConfig:          restCfg,
 		LeaderElectionReleaseOnCancel: true,
 	}
-	var mgr ctrl.Manager
+	var mgr mcmanager.Manager
 	var err error
 	mgrConfig := rest.CopyConfig(restCfg)
+	var provider *apiexport.Provider
+
 	if len(operatorCfg.Kcp.ApiExportEndpointSliceName) > 0 {
 		// Lookup API Endpointslice
 		kclient, err := client.New(restCfg, client.Options{
@@ -110,8 +114,14 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		}
 		log.Info().Str("host", es.Status.APIExportEndpoints[0].URL).Msg("using host")
 		mgrConfig.Host = es.Status.APIExportEndpoints[0].URL
+
+		provider, err = apiexport.New(mgrConfig, apiexport.Options{})
+		if err != nil {
+			log.Fatal().Err(err).Msg("unable to construct cluster provider")
+		}
 	}
-	mgr, err = kcp.NewClusterAwareManager(mgrConfig, opts)
+
+	mgr, err = mcmanager.New(mgrConfig, provider, opts)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to start manager")
 	}
@@ -133,12 +143,16 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	}
 
 	accountReconciler := controller.NewAccountReconciler(log, mgr, operatorCfg, fgaClient)
-	if err := accountReconciler.SetupWithManager(mgr, defaultCfg, log); err != nil {
+	if err := mcbuilder.ControllerManagedBy(mgr).
+		Named("account-controller").
+		For(&v1alpha1.Account{}).
+		Complete(accountReconciler); err != nil {
 		log.Fatal().Err(err).Str("controller", "Account").Msg("unable to create controller")
 	}
 
 	if operatorCfg.Webhooks.Enabled {
-		if err := v1alpha1.SetupAccountWebhookWithManager(mgr); err != nil {
+		localMgr := mgr.GetLocalManager()
+		if err := v1alpha1.SetupAccountWebhookWithManager(localMgr); err != nil {
 			log.Fatal().Err(err).Str("webhook", "Account").Msg("unable to create webhook")
 		}
 	}
@@ -148,6 +162,15 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		log.Fatal().Err(err).Msg("unable to set up ready check")
+	}
+
+	if provider != nil {
+		log.Info().Msg("starting provider")
+		go func() {
+			if err := provider.Run(ctx, mgr); err != nil {
+				log.Fatal().Err(err).Msg("unable to run provider")
+			}
+		}()
 	}
 
 	log.Info().Msg("starting manager")
