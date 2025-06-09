@@ -23,6 +23,7 @@ import (
 	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	openmfpcontext "github.com/openmfp/golang-commons/context"
+	"github.com/openmfp/golang-commons/traces"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -53,6 +54,7 @@ var (
 )
 
 func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
+	var err error
 	ctrl.SetLogger(log.ComponentLogger("controller-runtime").Logr())
 
 	ctx, _, shutdown := openmfpcontext.StartContext(log, operatorCfg, defaultCfg.ShutdownTimeout)
@@ -67,6 +69,25 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
+
+	var providerShutdown func(ctx context.Context) error
+	if defaultCfg.Tracing.Enabled {
+		providerShutdown, err = traces.InitProvider(ctx, defaultCfg.Tracing.Collector)
+		if err != nil {
+			log.Fatal().Err(err).Msg("unable to start gRPC-Sidecar TracerProvider")
+		}
+	} else {
+		providerShutdown, err = traces.InitLocalProvider(ctx, defaultCfg.Tracing.Collector, false)
+		if err != nil {
+			log.Fatal().Err(err).Msg("unable to start local TracerProvider")
+		}
+	}
+
+	defer func() {
+		if err := providerShutdown(ctx); err != nil {
+			log.Fatal().Err(err).Msg("failed to shutdown TracerProvider")
+		}
+	}()
 
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts: tlsOpts,
@@ -90,7 +111,6 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		LeaderElectionReleaseOnCancel: true,
 	}
 	var mgr ctrl.Manager
-	var err error
 	mgrConfig := rest.CopyConfig(restCfg)
 	if len(operatorCfg.Kcp.ApiExportEndpointSliceName) > 0 {
 		// Lookup API Endpointslice
