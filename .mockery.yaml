@@ -2,14 +2,6 @@ structname: '{{.InterfaceName}}'
 dir: 'pkg/subroutines/mocks'
 pkgname: mocks
 packages:
-#  github.com/openmfp/account-operator/pkg/service:
-#    interfaces:
-#      Service:
-#        config:
-#          include-interface-regex: K8Service
-#          filename: mock_K8Service.go
-
-  # third party
   github.com/openfga/api/proto/openfga/v1:
     interfaces:
       OpenFGAServiceClient:
