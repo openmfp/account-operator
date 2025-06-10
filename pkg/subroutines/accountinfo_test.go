@@ -416,7 +416,7 @@ func (suite *AccountInfoSubroutineTestSuite) mockCreateAccountInfoCall(info v1al
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetWorkspaceByName(ready kcpcorev1alpha1.LogicalClusterPhaseType, path string) *mocks.Client_Get_Call {
 	return suite.clientMock.EXPECT().
-		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.Workspace"), mock.Anything).
+		Get(mock.Anything, mock.Anything, mock.AnythingOfType("*v1alpha1.Workspace")).
 		Run(func(ctx context.Context, key types.NamespacedName, obj client.Object, opts ...client.GetOption) {
 			wsPath := ""
 			if path != "" {
