@@ -139,14 +139,20 @@ type SubResourceClientConstructor_SubResource_Call struct {
 }
 
 // SubResource is a helper method to define mock.On call
-//   - subResource
+//   - subResource string
 func (_e *SubResourceClientConstructor_Expecter) SubResource(subResource interface{}) *SubResourceClientConstructor_SubResource_Call {
 	return &SubResourceClientConstructor_SubResource_Call{Call: _e.mock.On("SubResource", subResource)}
 }
 
 func (_c *SubResourceClientConstructor_SubResource_Call) Run(run func(subResource string)) *SubResourceClientConstructor_SubResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -217,10 +223,10 @@ type SubResourceClient_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - subResource
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - subResource client.Object
+//   - opts ...client.SubResourceCreateOption
 func (_e *SubResourceClient_Expecter) Create(ctx interface{}, obj interface{}, subResource interface{}, opts ...interface{}) *SubResourceClient_Create_Call {
 	return &SubResourceClient_Create_Call{Call: _e.mock.On("Create",
 		append([]interface{}{ctx, obj, subResource}, opts...)...)}
@@ -228,8 +234,30 @@ func (_e *SubResourceClient_Expecter) Create(ctx interface{}, obj interface{}, s
 
 func (_c *SubResourceClient_Create_Call) Run(run func(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption)) *SubResourceClient_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[3].([]client.SubResourceCreateOption)
-		run(args[0].(context.Context), args[1].(client.Object), args[2].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 client.Object
+		if args[2] != nil {
+			arg2 = args[2].(client.Object)
+		}
+		var arg3 []client.SubResourceCreateOption
+		var variadicArgs []client.SubResourceCreateOption
+		if len(args) > 3 {
+			variadicArgs = args[3].([]client.SubResourceCreateOption)
+		}
+		arg3 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3...,
+		)
 	})
 	return _c
 }
@@ -273,10 +301,10 @@ type SubResourceClient_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - subResource
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - subResource client.Object
+//   - opts ...client.SubResourceGetOption
 func (_e *SubResourceClient_Expecter) Get(ctx interface{}, obj interface{}, subResource interface{}, opts ...interface{}) *SubResourceClient_Get_Call {
 	return &SubResourceClient_Get_Call{Call: _e.mock.On("Get",
 		append([]interface{}{ctx, obj, subResource}, opts...)...)}
@@ -284,8 +312,30 @@ func (_e *SubResourceClient_Expecter) Get(ctx interface{}, obj interface{}, subR
 
 func (_c *SubResourceClient_Get_Call) Run(run func(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceGetOption)) *SubResourceClient_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[3].([]client.SubResourceGetOption)
-		run(args[0].(context.Context), args[1].(client.Object), args[2].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 client.Object
+		if args[2] != nil {
+			arg2 = args[2].(client.Object)
+		}
+		var arg3 []client.SubResourceGetOption
+		var variadicArgs []client.SubResourceGetOption
+		if len(args) > 3 {
+			variadicArgs = args[3].([]client.SubResourceGetOption)
+		}
+		arg3 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3...,
+		)
 	})
 	return _c
 }
@@ -329,10 +379,10 @@ type SubResourceClient_Patch_Call struct {
 }
 
 // Patch is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - patch
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - patch client.Patch
+//   - opts ...client.SubResourcePatchOption
 func (_e *SubResourceClient_Expecter) Patch(ctx interface{}, obj interface{}, patch interface{}, opts ...interface{}) *SubResourceClient_Patch_Call {
 	return &SubResourceClient_Patch_Call{Call: _e.mock.On("Patch",
 		append([]interface{}{ctx, obj, patch}, opts...)...)}
@@ -340,8 +390,30 @@ func (_e *SubResourceClient_Expecter) Patch(ctx interface{}, obj interface{}, pa
 
 func (_c *SubResourceClient_Patch_Call) Run(run func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption)) *SubResourceClient_Patch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[3].([]client.SubResourcePatchOption)
-		run(args[0].(context.Context), args[1].(client.Object), args[2].(client.Patch), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 client.Patch
+		if args[2] != nil {
+			arg2 = args[2].(client.Patch)
+		}
+		var arg3 []client.SubResourcePatchOption
+		var variadicArgs []client.SubResourcePatchOption
+		if len(args) > 3 {
+			variadicArgs = args[3].([]client.SubResourcePatchOption)
+		}
+		arg3 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3...,
+		)
 	})
 	return _c
 }
@@ -385,9 +457,9 @@ type SubResourceClient_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - opts ...client.SubResourceUpdateOption
 func (_e *SubResourceClient_Expecter) Update(ctx interface{}, obj interface{}, opts ...interface{}) *SubResourceClient_Update_Call {
 	return &SubResourceClient_Update_Call{Call: _e.mock.On("Update",
 		append([]interface{}{ctx, obj}, opts...)...)}
@@ -395,8 +467,25 @@ func (_e *SubResourceClient_Expecter) Update(ctx interface{}, obj interface{}, o
 
 func (_c *SubResourceClient_Update_Call) Run(run func(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption)) *SubResourceClient_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.SubResourceUpdateOption)
-		run(args[0].(context.Context), args[1].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 []client.SubResourceUpdateOption
+		var variadicArgs []client.SubResourceUpdateOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.SubResourceUpdateOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }
@@ -467,9 +556,9 @@ type Client_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - opts ...client.CreateOption
 func (_e *Client_Expecter) Create(ctx interface{}, obj interface{}, opts ...interface{}) *Client_Create_Call {
 	return &Client_Create_Call{Call: _e.mock.On("Create",
 		append([]interface{}{ctx, obj}, opts...)...)}
@@ -477,8 +566,25 @@ func (_e *Client_Expecter) Create(ctx interface{}, obj interface{}, opts ...inte
 
 func (_c *Client_Create_Call) Run(run func(ctx context.Context, obj client.Object, opts ...client.CreateOption)) *Client_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.CreateOption)
-		run(args[0].(context.Context), args[1].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 []client.CreateOption
+		var variadicArgs []client.CreateOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.CreateOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }
@@ -522,9 +628,9 @@ type Client_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - opts ...client.DeleteOption
 func (_e *Client_Expecter) Delete(ctx interface{}, obj interface{}, opts ...interface{}) *Client_Delete_Call {
 	return &Client_Delete_Call{Call: _e.mock.On("Delete",
 		append([]interface{}{ctx, obj}, opts...)...)}
@@ -532,8 +638,25 @@ func (_e *Client_Expecter) Delete(ctx interface{}, obj interface{}, opts ...inte
 
 func (_c *Client_Delete_Call) Run(run func(ctx context.Context, obj client.Object, opts ...client.DeleteOption)) *Client_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.DeleteOption)
-		run(args[0].(context.Context), args[1].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 []client.DeleteOption
+		var variadicArgs []client.DeleteOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.DeleteOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }
@@ -577,9 +700,9 @@ type Client_DeleteAllOf_Call struct {
 }
 
 // DeleteAllOf is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - opts ...client.DeleteAllOfOption
 func (_e *Client_Expecter) DeleteAllOf(ctx interface{}, obj interface{}, opts ...interface{}) *Client_DeleteAllOf_Call {
 	return &Client_DeleteAllOf_Call{Call: _e.mock.On("DeleteAllOf",
 		append([]interface{}{ctx, obj}, opts...)...)}
@@ -587,8 +710,25 @@ func (_e *Client_Expecter) DeleteAllOf(ctx interface{}, obj interface{}, opts ..
 
 func (_c *Client_DeleteAllOf_Call) Run(run func(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption)) *Client_DeleteAllOf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.DeleteAllOfOption)
-		run(args[0].(context.Context), args[1].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 []client.DeleteAllOfOption
+		var variadicArgs []client.DeleteAllOfOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.DeleteAllOfOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }
@@ -632,10 +772,10 @@ type Client_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - ctx
-//   - key
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - key client.ObjectKey
+//   - obj client.Object
+//   - opts ...client.GetOption
 func (_e *Client_Expecter) Get(ctx interface{}, key interface{}, obj interface{}, opts ...interface{}) *Client_Get_Call {
 	return &Client_Get_Call{Call: _e.mock.On("Get",
 		append([]interface{}{ctx, key, obj}, opts...)...)}
@@ -643,8 +783,30 @@ func (_e *Client_Expecter) Get(ctx interface{}, key interface{}, obj interface{}
 
 func (_c *Client_Get_Call) Run(run func(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption)) *Client_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[3].([]client.GetOption)
-		run(args[0].(context.Context), args[1].(client.ObjectKey), args[2].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.ObjectKey
+		if args[1] != nil {
+			arg1 = args[1].(client.ObjectKey)
+		}
+		var arg2 client.Object
+		if args[2] != nil {
+			arg2 = args[2].(client.Object)
+		}
+		var arg3 []client.GetOption
+		var variadicArgs []client.GetOption
+		if len(args) > 3 {
+			variadicArgs = args[3].([]client.GetOption)
+		}
+		arg3 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3...,
+		)
 	})
 	return _c
 }
@@ -691,14 +853,20 @@ type Client_GroupVersionKindFor_Call struct {
 }
 
 // GroupVersionKindFor is a helper method to define mock.On call
-//   - obj
+//   - obj runtime.Object
 func (_e *Client_Expecter) GroupVersionKindFor(obj interface{}) *Client_GroupVersionKindFor_Call {
 	return &Client_GroupVersionKindFor_Call{Call: _e.mock.On("GroupVersionKindFor", obj)}
 }
 
 func (_c *Client_GroupVersionKindFor_Call) Run(run func(obj runtime.Object)) *Client_GroupVersionKindFor_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(runtime.Object))
+		var arg0 runtime.Object
+		if args[0] != nil {
+			arg0 = args[0].(runtime.Object)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -745,14 +913,20 @@ type Client_IsObjectNamespaced_Call struct {
 }
 
 // IsObjectNamespaced is a helper method to define mock.On call
-//   - obj
+//   - obj runtime.Object
 func (_e *Client_Expecter) IsObjectNamespaced(obj interface{}) *Client_IsObjectNamespaced_Call {
 	return &Client_IsObjectNamespaced_Call{Call: _e.mock.On("IsObjectNamespaced", obj)}
 }
 
 func (_c *Client_IsObjectNamespaced_Call) Run(run func(obj runtime.Object)) *Client_IsObjectNamespaced_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(runtime.Object))
+		var arg0 runtime.Object
+		if args[0] != nil {
+			arg0 = args[0].(runtime.Object)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -796,9 +970,9 @@ type Client_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
-//   - ctx
-//   - list
-//   - opts
+//   - ctx context.Context
+//   - list client.ObjectList
+//   - opts ...client.ListOption
 func (_e *Client_Expecter) List(ctx interface{}, list interface{}, opts ...interface{}) *Client_List_Call {
 	return &Client_List_Call{Call: _e.mock.On("List",
 		append([]interface{}{ctx, list}, opts...)...)}
@@ -806,8 +980,25 @@ func (_e *Client_Expecter) List(ctx interface{}, list interface{}, opts ...inter
 
 func (_c *Client_List_Call) Run(run func(ctx context.Context, list client.ObjectList, opts ...client.ListOption)) *Client_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.ListOption)
-		run(args[0].(context.Context), args[1].(client.ObjectList), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.ObjectList
+		if args[1] != nil {
+			arg1 = args[1].(client.ObjectList)
+		}
+		var arg2 []client.ListOption
+		var variadicArgs []client.ListOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.ListOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }
@@ -851,10 +1042,10 @@ type Client_Patch_Call struct {
 }
 
 // Patch is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - patch
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - patch client.Patch
+//   - opts ...client.PatchOption
 func (_e *Client_Expecter) Patch(ctx interface{}, obj interface{}, patch interface{}, opts ...interface{}) *Client_Patch_Call {
 	return &Client_Patch_Call{Call: _e.mock.On("Patch",
 		append([]interface{}{ctx, obj, patch}, opts...)...)}
@@ -862,8 +1053,30 @@ func (_e *Client_Expecter) Patch(ctx interface{}, obj interface{}, patch interfa
 
 func (_c *Client_Patch_Call) Run(run func(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption)) *Client_Patch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[3].([]client.PatchOption)
-		run(args[0].(context.Context), args[1].(client.Object), args[2].(client.Patch), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 client.Patch
+		if args[2] != nil {
+			arg2 = args[2].(client.Patch)
+		}
+		var arg3 []client.PatchOption
+		var variadicArgs []client.PatchOption
+		if len(args) > 3 {
+			variadicArgs = args[3].([]client.PatchOption)
+		}
+		arg3 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3...,
+		)
 	})
 	return _c
 }
@@ -1041,14 +1254,20 @@ type Client_SubResource_Call struct {
 }
 
 // SubResource is a helper method to define mock.On call
-//   - subResource
+//   - subResource string
 func (_e *Client_Expecter) SubResource(subResource interface{}) *Client_SubResource_Call {
 	return &Client_SubResource_Call{Call: _e.mock.On("SubResource", subResource)}
 }
 
 func (_c *Client_SubResource_Call) Run(run func(subResource string)) *Client_SubResource_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -1092,9 +1311,9 @@ type Client_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - ctx
-//   - obj
-//   - opts
+//   - ctx context.Context
+//   - obj client.Object
+//   - opts ...client.UpdateOption
 func (_e *Client_Expecter) Update(ctx interface{}, obj interface{}, opts ...interface{}) *Client_Update_Call {
 	return &Client_Update_Call{Call: _e.mock.On("Update",
 		append([]interface{}{ctx, obj}, opts...)...)}
@@ -1102,8 +1321,25 @@ func (_e *Client_Expecter) Update(ctx interface{}, obj interface{}, opts ...inte
 
 func (_c *Client_Update_Call) Run(run func(ctx context.Context, obj client.Object, opts ...client.UpdateOption)) *Client_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := args[2].([]client.UpdateOption)
-		run(args[0].(context.Context), args[1].(client.Object), variadicArgs...)
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 client.Object
+		if args[1] != nil {
+			arg1 = args[1].(client.Object)
+		}
+		var arg2 []client.UpdateOption
+		var variadicArgs []client.UpdateOption
+		if len(args) > 2 {
+			variadicArgs = args[2].([]client.UpdateOption)
+		}
+		arg2 = variadicArgs
+		run(
+			arg0,
+			arg1,
+			arg2...,
+		)
 	})
 	return _c
 }

@@ -1,3 +1,11 @@
+all: false
+force-file-write: true
+formatter: goimports
+log-level: info
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
 structname: '{{.InterfaceName}}'
 dir: 'pkg/subroutines/mocks'
 pkgname: mocks
