@@ -99,13 +99,11 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	})
 	restCfg := ctrl.GetConfigOrDie()
 
-	transport := otelhttp.NewTransport(http.DefaultTransport)
-	httpClient := &http.Client{
-		Transport: transport,
-	}
 	opts := ctrl.Options{
 		Client: client.Options{
-			HTTPClient: httpClient,
+			HTTPClient: &http.Client{
+				Transport: otelhttp.NewTransport(http.DefaultTransport),
+			},
 		},
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
