@@ -19,6 +19,7 @@ package cmd
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
@@ -36,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/controller"
@@ -95,7 +98,15 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		Port:    operatorCfg.Webhooks.Port,
 	})
 	restCfg := ctrl.GetConfigOrDie()
+
+	transport := otelhttp.NewTransport(http.DefaultTransport)
+	httpClient := &http.Client{
+		Transport: transport,
+	}
 	opts := ctrl.Options{
+		Client: client.Options{
+			HTTPClient: httpClient,
+		},
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress:   defaultCfg.Metrics.BindAddress,
