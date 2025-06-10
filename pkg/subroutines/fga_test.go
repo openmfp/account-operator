@@ -56,7 +56,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		name          string
 		expectedError bool
 		account       *v1alpha1.Account
-		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.K8Service, *mocks.Client)
+		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.Client)
 	}{
 		{
 			name: "should_skip_processing_if_subroutine_ran_before",
@@ -73,7 +73,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					},
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -115,7 +115,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					account := o.(*v1alpha1.AccountInfo)
@@ -153,7 +153,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 			},
@@ -170,7 +170,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Type: v1alpha1.AccountTypeAccount,
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -219,7 +219,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Type: v1alpha1.AccountTypeAccount,
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -269,7 +269,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 				Spec: v1alpha1.AccountSpec{
 					Type: v1alpha1.AccountTypeAccount,
 				}},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -321,7 +321,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Creator: ptr.To("system:serviceaccount:some-namespace:some-service-account"),
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -380,7 +380,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Creator: ptr.To("system.serviceaccount.some-namespace.some-service-account"),
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -430,7 +430,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 					Creator: &creator,
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
@@ -477,11 +477,11 @@ func TestFGASubroutine_Process(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			openFGAClient := mocks.NewOpenFGAServiceClient(t)
-			accountClient := mocks.NewK8Service(t)
+
 			clientMock := mocks.NewClient(t)
 
 			if test.setupMocks != nil {
-				test.setupMocks(openFGAClient, accountClient, clientMock)
+				test.setupMocks(openFGAClient, clientMock)
 			}
 
 			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, "owner", "parent", "account")
@@ -505,7 +505,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 		name          string
 		expectedError bool
 		account       *v1alpha1.Account
-		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.K8Service, *mocks.Client)
+		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.Client)
 	}{
 		{
 			name:          "should_fail_if_get_store_id_fails",
@@ -516,7 +516,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 					account := o.(*v1alpha1.AccountInfo)
 
@@ -553,7 +553,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(assert.AnError)
 			},
 		},
@@ -566,7 +566,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -614,7 +614,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -661,7 +661,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -712,7 +712,7 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 					Creator: &creator,
 				},
 			},
-			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, k8ServiceMock *mocks.K8Service, clientMock *mocks.Client) {
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
 				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
 
 					account := o.(*v1alpha1.AccountInfo)
@@ -758,11 +758,10 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			openFGAClient := mocks.NewOpenFGAServiceClient(t)
-			accountClient := mocks.NewK8Service(t)
 			k8sClient := mocks.NewClient(t)
 
 			if test.setupMocks != nil {
-				test.setupMocks(openFGAClient, accountClient, k8sClient)
+				test.setupMocks(openFGAClient, k8sClient)
 			}
 
 			routine := subroutines.NewFGASubroutine(k8sClient, openFGAClient, "owner", "parent", "account")
