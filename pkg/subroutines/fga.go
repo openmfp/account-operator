@@ -162,12 +162,12 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 
 		deletes := []*openfgav1.TupleKeyWithoutCondition{}
 		if account.Spec.Type != v1alpha1.AccountTypeOrg {
-			parentAccountName := accountInfo.Spec.Account.Name
+			parentAccountName := accountInfo.Spec.ParentAccount.Name
 
 			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
-				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, parentAccountName),
+				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.OriginClusterId, parentAccountName),
 				Relation: e.parentRelation,
-				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.GeneratedClusterId, account.GetName()),
+				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
 			})
 
 			// Add deletion for the accountinfo parent relation tuple

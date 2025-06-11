@@ -290,6 +290,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 							ParentAccount: &v1alpha1.AccountLocation{
 								Name:               "root-org",
 								GeneratedClusterId: "root-org",
+								OriginClusterId:    "parent-origin-cluster",
 								Path:               "root:openmfp:org:root-org",
 								URL:                "http://example.com/clusters/root:openmfp:org:root-org",
 								Type:               v1alpha1.AccountTypeOrg,
@@ -297,6 +298,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 							Account: v1alpha1.AccountLocation{
 								Name:               "test-account",
 								GeneratedClusterId: "test-account-id",
+								OriginClusterId:    "origin-cluster-id",
 							},
 							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "123123"}},
 						},
@@ -305,7 +307,21 @@ func TestFGASubroutine_Process(t *testing.T) {
 					return nil
 				}).Once()
 				openFGAServiceClientMock.EXPECT().
-					Write(mock.Anything, mock.Anything).
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						return len(req.Writes.TupleKeys) == 1 &&
+							req.Writes.TupleKeys[0].Object == "account:origin-cluster-id/test-account" &&
+							req.Writes.TupleKeys[0].Relation == "parent" &&
+							req.Writes.TupleKeys[0].User == "account:parent-origin-cluster/root-org"
+					})).
+					Return(&openfgav1.WriteResponse{}, nil)
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						return len(req.Writes.TupleKeys) == 1 &&
+							req.Writes.TupleKeys[0].Object == "accountinfo:origin-cluster-id/test-account" &&
+							req.Writes.TupleKeys[0].Relation == "parent" &&
+							req.Writes.TupleKeys[0].User == "account:origin-cluster-id/test-account"
+					})).
 					Return(&openfgav1.WriteResponse{}, nil)
 			},
 		},
@@ -468,6 +484,83 @@ func TestFGASubroutine_Process(t *testing.T) {
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
+					Return(&openfgav1.WriteResponse{}, nil)
+			},
+		},
+		{
+			name: "should_write_accountinfo_tuple_for_account_type",
+			account: &v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "child-account",
+					Namespace: "test-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeAccount,
+				}},
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
+				mockGetWorkspaceByName(clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org").Once()
+				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "account",
+						},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name:               "root-org",
+								GeneratedClusterId: "root-org-cluster",
+								OriginClusterId:    "root-org-origin",
+								Path:               "root:openmfp:org:root-org",
+								URL:                "http://example.com/clusters/root:openmfp:org:root-org",
+								Type:               v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name:               "parent-account",
+								GeneratedClusterId: "parent-cluster-id",
+								OriginClusterId:    "parent-origin-cluster",
+								Path:               "root:openmfp:org:parent-account",
+								URL:                "http://example.com/clusters/root:openmfp:org:parent-account",
+								Type:               v1alpha1.AccountTypeAccount,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name:               "child-account",
+								GeneratedClusterId: "child-cluster-id",
+								OriginClusterId:    "child-origin-cluster",
+								Path:               "root:openmfp:org:parent-account:child-account",
+								URL:                "http://example.com/clusters/root:openmfp:org:parent-account:child-account",
+								Type:               v1alpha1.AccountTypeAccount,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "test-store-123"}},
+						},
+					}
+
+					return nil
+				}).Once()
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						if len(req.Writes.TupleKeys) != 1 || req.StoreId != "test-store-123" {
+							return false
+						}
+						tuple := req.Writes.TupleKeys[0]
+						return tuple.Object == "account:child-origin-cluster/child-account" &&
+							tuple.Relation == "parent" &&
+							tuple.User == "account:parent-origin-cluster/parent-account"
+					})).
+					Return(&openfgav1.WriteResponse{}, nil)
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						if len(req.Writes.TupleKeys) != 1 || req.StoreId != "test-store-123" {
+							return false
+						}
+						tuple := req.Writes.TupleKeys[0]
+						return tuple.Object == "accountinfo:child-origin-cluster/child-account" &&
+							tuple.Relation == "parent" &&
+							tuple.User == "account:child-origin-cluster/child-account"
+					})).
 					Return(&openfgav1.WriteResponse{}, nil)
 			},
 		},
@@ -749,7 +842,80 @@ func TestCreatorSubroutine_Finalize(t *testing.T) {
 
 				openFGAServiceClientMock.EXPECT().
 					Write(mock.Anything, mock.Anything).
-					Return(&openfgav1.WriteResponse{}, nil).Times(3)
+					Return(&openfgav1.WriteResponse{}, nil).Times(4)
+			},
+		},
+		{
+			name: "should_delete_accountinfo_tuple_for_account_type",
+			account: &v1alpha1.Account{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-account",
+					Namespace: "test-namespace",
+				},
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeAccount,
+				},
+			},
+			setupMocks: func(openFGAServiceClientMock *mocks.OpenFGAServiceClient, clientMock *mocks.Client) {
+				clientMock.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, nn types.NamespacedName, o client.Object, opts ...client.GetOption) error {
+					account := o.(*v1alpha1.AccountInfo)
+
+					*account = v1alpha1.AccountInfo{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "account",
+						},
+						Spec: v1alpha1.AccountInfoSpec{
+							Organization: v1alpha1.AccountLocation{
+								Name: "root-org",
+								Path: "root:openmfp:org:root-org",
+								URL:  "http://example.com/clusters/root:openmfp:org:root-org",
+								Type: v1alpha1.AccountTypeOrg,
+							},
+							ParentAccount: &v1alpha1.AccountLocation{
+								Name:            "parent-account",
+								OriginClusterId: "parent-origin-cluster",
+								Path:            "root:openmfp:org:parent-account",
+								URL:             "http://example.com/clusters/root:openmfp:org:parent-account",
+								Type:            v1alpha1.AccountTypeAccount,
+							},
+							Account: v1alpha1.AccountLocation{
+								Name:               "test-account",
+								GeneratedClusterId: "test-cluster-id",
+								OriginClusterId:    "test-origin-cluster",
+								Path:               "root:openmfp:org:parent-account:test-account",
+								URL:                "http://example.com/clusters/root:openmfp:org:parent-account:test-account",
+								Type:               v1alpha1.AccountTypeAccount,
+							},
+							FGA: v1alpha1.FGAInfo{Store: v1alpha1.StoreInfo{Id: "delete-store-123"}},
+						},
+					}
+
+					return nil
+				}).Once()
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						if len(req.Deletes.TupleKeys) != 1 || req.StoreId != "delete-store-123" {
+							return false
+						}
+						tuple := req.Deletes.TupleKeys[0]
+						return tuple.Object == "account:test-origin-cluster/test-account" &&
+							tuple.Relation == "parent" &&
+							tuple.User == "account:parent-origin-cluster/parent-account"
+					})).
+					Return(&openfgav1.WriteResponse{}, nil)
+
+				openFGAServiceClientMock.EXPECT().
+					Write(mock.Anything, mock.MatchedBy(func(req *openfgav1.WriteRequest) bool {
+						if len(req.Deletes.TupleKeys) != 1 || req.StoreId != "delete-store-123" {
+							return false
+						}
+						tuple := req.Deletes.TupleKeys[0]
+						return tuple.Object == "accountinfo:test-origin-cluster/test-account" &&
+							tuple.Relation == "parent" &&
+							tuple.User == "account:test-origin-cluster/test-account"
+					})).
+					Return(&openfgav1.WriteResponse{}, nil)
 			},
 		},
 	}
