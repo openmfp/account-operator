@@ -91,6 +91,12 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 			Relation: e.parentRelation,
 			User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.ParentAccount.OriginClusterId, parentAccountName),
 		})
+		// Write tuple for accountinfo parent relation to account
+		writes = append(writes, &openfgav1.TupleKey{
+			Object:   fmt.Sprintf("accountinfo:%s/%s", accountInfo.Spec.Account.OriginClusterId, account.GetName()),
+			Relation: "parent",
+			User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
+		})
 	}
 
 	// Assign creator to the account
@@ -162,6 +168,13 @@ func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.Runti
 				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, parentAccountName),
 				Relation: e.parentRelation,
 				Object:   fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.GeneratedClusterId, account.GetName()),
+			})
+
+			// Add deletion for the accountinfo parent relation tuple
+			deletes = append(deletes, &openfgav1.TupleKeyWithoutCondition{
+				Object:   fmt.Sprintf("accountinfo:%s/%s", accountInfo.Spec.Account.OriginClusterId, account.GetName()),
+				Relation: "parent",
+				User:     fmt.Sprintf("%s:%s/%s", e.objectType, accountInfo.Spec.Account.OriginClusterId, account.GetName()),
 			})
 		}
 
