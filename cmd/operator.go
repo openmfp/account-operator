@@ -99,10 +99,16 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 	})
 	restCfg := ctrl.GetConfigOrDie()
 
+	baseTransport, err := rest.TransportFor(restCfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to create base transport")
+		return
+	}
+	tracingTransport := otelhttp.NewTransport(baseTransport)
 	opts := ctrl.Options{
 		Client: client.Options{
 			HTTPClient: &http.Client{
-				Transport: otelhttp.NewTransport(http.DefaultTransport),
+				Transport: tracingTransport,
 			},
 		},
 		Scheme: scheme,
