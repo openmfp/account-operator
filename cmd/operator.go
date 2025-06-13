@@ -98,19 +98,10 @@ func RunController(_ *cobra.Command, _ []string) { // coverage-ignore
 		Port:    operatorCfg.Webhooks.Port,
 	})
 	restCfg := ctrl.GetConfigOrDie()
-
-	baseTransport, err := rest.TransportFor(restCfg)
-	if err != nil {
-		log.Fatal().Err(err).Msg("unable to create base transport")
-		return
-	}
-	tracingTransport := otelhttp.NewTransport(baseTransport)
+	restCfg.Wrap(func(rt http.RoundTripper) http.RoundTripper {
+		return otelhttp.NewTransport(rt)
+	})
 	opts := ctrl.Options{
-		Client: client.Options{
-			HTTPClient: &http.Client{
-				Transport: tracingTransport,
-			},
-		},
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress:   defaultCfg.Metrics.BindAddress,
