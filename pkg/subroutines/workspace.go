@@ -4,9 +4,9 @@ import (
 	"context"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
-	commonconfig "github.com/openmfp/golang-commons/config"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
+	commonconfig "github.com/platform-mesh/golang-commons/config"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,7 +34,7 @@ func (r *WorkspaceSubroutine) GetName() string {
 	return WorkspaceSubroutineName
 }
 
-func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*corev1alpha1.Account)
 
 	ws := kcptenancyv1alpha.Workspace{}
@@ -62,7 +62,7 @@ func (r *WorkspaceSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.org/finalizer"}
 }
 
-func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*corev1alpha1.Account)
 	cfg := commonconfig.LoadConfigFromContext(ctx).(config.OperatorConfig)
 

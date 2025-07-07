@@ -9,10 +9,10 @@ import (
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
-	"github.com/openmfp/golang-commons/fga/helpers"
-	"github.com/openmfp/golang-commons/logger"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/platform-mesh/golang-commons/fga/helpers"
+	"github.com/platform-mesh/golang-commons/logger"
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +39,7 @@ func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient
 	}
 }
 
-func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (e *FGASubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := runtimeObj.(*v1alpha1.Account)
 
 	log := logger.LoadLoggerFromContext(ctx)
@@ -137,7 +137,7 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 	return ctrl.Result{}, nil
 }
 
-func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := runtimeObj.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
 

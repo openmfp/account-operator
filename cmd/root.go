@@ -3,8 +3,8 @@ package cmd
 import (
 	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
-	openmfpconfig "github.com/openmfp/golang-commons/config"
-	"github.com/openmfp/golang-commons/logger"
+	openmfpconfig "github.com/platform-mesh/golang-commons/config"
+	"github.com/platform-mesh/golang-commons/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"

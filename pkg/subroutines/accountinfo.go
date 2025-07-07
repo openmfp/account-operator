@@ -8,9 +8,10 @@ import (
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
-	"github.com/openmfp/golang-commons/logger"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/subroutine"
+	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/platform-mesh/golang-commons/logger"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,7 +22,7 @@ import (
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
-var _ lifecycle.Subroutine = (*AccountInfoSubroutine)(nil)
+var _ subroutine.Subroutine = (*AccountInfoSubroutine)(nil)
 
 const (
 	AccountInfoSubroutineName = "AccountInfoSubroutine"
@@ -41,7 +42,7 @@ func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
 	if len(ro.GetFinalizers()) > 1 {
 		return ctrl.Result{Requeue: true}, nil
@@ -53,7 +54,7 @@ func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.org/info"}
 }
 
-func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
 

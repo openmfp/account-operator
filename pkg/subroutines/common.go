@@ -4,8 +4,8 @@ import (
 	"context"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
-	"github.com/openmfp/golang-commons/errors"
-	"github.com/openmfp/golang-commons/logger"
+	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/platform-mesh/golang-commons/logger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
