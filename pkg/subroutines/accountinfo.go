@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
@@ -12,8 +13,11 @@ import (
 	"github.com/platform-mesh/golang-commons/controller/lifecycle/subroutine"
 	"github.com/platform-mesh/golang-commons/errors"
 	"github.com/platform-mesh/golang-commons/logger"
+	"github.com/rs/zerolog/log"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -29,25 +33,45 @@ const (
 	DefaultAccountInfoName    = "account"
 )
 
+type ClusteredName struct {
+	types.NamespacedName
+	ClusterID logicalcluster.Name
+}
+
 type AccountInfoSubroutine struct {
 	client   client.Client
 	serverCA string
+	limiter  workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewAccountInfoSubroutine(client client.Client, serverCA string) *AccountInfoSubroutine {
-	return &AccountInfoSubroutine{client: client, serverCA: serverCA}
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
+	return &AccountInfoSubroutine{client: client, serverCA: serverCA, limiter: exp}
 }
 
 func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
 	if len(ro.GetFinalizers()) > 1 {
-		return ctrl.Result{Requeue: true}, nil
+		if cn, ok := getClusteredName(ctx, ro); ok {
+			delay := r.limiter.When(cn)
+			return ctrl.Result{RequeueAfter: delay}, nil
+		} else {
+			log.Error().Msg("cluster not found in context, cannot requeue")
+			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+		}
 	}
-	return ctrl.Result{}, nil
+
+	if cn, ok := getClusteredName(ctx, ro); ok {
+		r.limiter.Forget(cn)
+		return ctrl.Result{}, nil
+	} else {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
 }
 
 func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
@@ -66,7 +90,13 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeo
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		return ctrl.Result{Requeue: true}, nil
+		if cn, ok := getClusteredName(ctx, instance); ok {
+			delay := r.limiter.When(cn)
+			return ctrl.Result{RequeueAfter: delay}, nil
+		} else {
+			log.Error().Msg("cluster not found in context, cannot requeue")
+			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+		}
 	}
 
 	// Prepare context to work in workspace
@@ -105,7 +135,13 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeo
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 
-		return ctrl.Result{}, nil
+		if cn, ok := getClusteredName(ctx, instance); ok {
+			r.limiter.Forget(cn)
+			return ctrl.Result{}, nil
+		} else {
+			log.Error().Msg("cluster not found in context, cannot requeue")
+			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+		}
 	}
 
 	parentAccountInfo, exists, err := r.retrieveAccountInfo(ctx, log)
@@ -162,4 +198,14 @@ func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ws *kcptenancyv1alp
 		return "", "", fmt.Errorf("workspace URL is empty")
 	}
 	return lastSegment, ws.Spec.URL, nil
+}
+
+func getClusteredName(ctx context.Context, instance runtimeobject.RuntimeObject) (ClusteredName, bool) {
+	var cn ClusteredName
+	if cluster, ok := kontext.ClusterFrom(ctx); ok {
+		cn = ClusteredName{NamespacedName: types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()}, ClusterID: cluster}
+		return cn, true
+	} else {
+		return cn, false
+	}
 }

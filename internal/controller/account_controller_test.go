@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	defaultTestTimeout  = 15 * time.Second
+	defaultTestTimeout  = 30 * time.Second
 	defaultTickInterval = 250 * time.Millisecond
 	defaultNamespace    = "default"
 )
@@ -273,7 +273,7 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 		err := testClient.Get(testContext, types.NamespacedName{
 			Name: "account",
 		}, &accountInfo)
-		return err == nil
+		return err == nil && len(accountInfo.Spec.Account.Name) > 0
 	}, defaultTestTimeout, defaultTickInterval)
 
 	// Test if Workspace exists
