@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	defaultTestTimeout  = 30 * time.Second
+	defaultTestTimeout  = 15 * time.Second
 	defaultTickInterval = 250 * time.Millisecond
 	defaultNamespace    = "default"
 )
