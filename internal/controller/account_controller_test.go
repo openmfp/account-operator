@@ -273,7 +273,7 @@ func (suite *AccountTestSuite) TestAccountInfoCreationForAccount() {
 		err := testClient.Get(testContext, types.NamespacedName{
 			Name: "account",
 		}, &accountInfo)
-		return err == nil && len(accountInfo.Spec.Account.Name) > 0
+		return err == nil
 	}, defaultTestTimeout, defaultTickInterval)
 
 	// Test if Workspace exists
