@@ -115,6 +115,57 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
+func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Missing_Context() {
+	// Given
+	testAccount := &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "root-org",
+			Annotations: map[string]string{
+				"kcp.io/cluster": "asd",
+			},
+		},
+		Spec: v1alpha1.AccountSpec{
+			Type: v1alpha1.AccountTypeOrg,
+		},
+	}
+	expectedAccountInfo := v1alpha1.AccountInfo{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "account",
+		},
+		Spec: v1alpha1.AccountInfoSpec{
+			ClusterInfo: v1alpha1.ClusterInfo{
+				CA: "some-ca",
+			},
+			Organization: v1alpha1.AccountLocation{
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				OriginClusterId:    "asd",
+				Path:               "root:openmfp:orgs:root-org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
+				Type:               "org",
+			},
+			Account: v1alpha1.AccountLocation{
+				Name:               "root-org",
+				GeneratedClusterId: "some-cluster-id-root-org",
+				OriginClusterId:    "asd",
+				Path:               "root:openmfp:orgs:root-org",
+				URL:                "https://example.com/root:openmfp:orgs:root-org",
+				Type:               "org",
+			},
+		},
+	}
+
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
+	suite.mockGetAccountInfoCallNotFound()
+	suite.mockCreateAccountInfoCall(expectedAccountInfo)
+
+	// When
+	_, err := suite.testObj.Process(context.Background(), testAccount)
+
+	// Then
+	suite.Error(err.Err())
+}
+
 func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Workspace_Not_Ready() {
 	// Given
 	testAccount := &v1alpha1.Account{
@@ -139,6 +190,27 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Work
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
+func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Workspace_Not_Ready_no_Context() {
+	// Given
+	testAccount := &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "root-org",
+		},
+		Spec: v1alpha1.AccountSpec{
+			Type: v1alpha1.AccountTypeOrg,
+		},
+	}
+	ctx := context.Background()
+
+	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseInitializing, "root:openmfp:orgs")
+
+	// When
+	_, err := suite.testObj.Process(ctx, testAccount)
+
+	// Then
+	suite.Error(err.Err())
+}
+
 func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_No_Workspace() {
 	// Given
 	testAccount := &v1alpha1.Account{
@@ -151,9 +223,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_No_W
 	}
 
 	suite.mockGetWorkspaceNotFound()
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -175,9 +248,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_No_Path() {
 		},
 	}
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "")
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -199,9 +273,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Empty_Path() {
 		},
 	}
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, " ")
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -223,9 +298,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_Invalid_Path() {
 		},
 	}
 	suite.mockGetWorkspaceByWrongPath(kcpcorev1alpha1.LogicalClusterPhaseReady)
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -295,9 +371,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForAccount() {
 	suite.mockGetAccountInfo(parentAccountInfoSpec).Once()
 	suite.mockGetAccountInfoCallNotFound()
 	suite.mockCreateAccountInfoCall(expectedAccountInfo)
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.Nil(err)
@@ -321,8 +398,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_No_Parent
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallNotFound()
 
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -349,9 +427,10 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForAccount_Parent_Lo
 
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallFailed()
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
-	_, err := suite.testObj.Process(suite.context, testAccount)
+	_, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.NotNil(err)
@@ -392,6 +471,20 @@ func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 	// Then
 	suite.Nil(err)
 	suite.Assert().NotZero(res.RequeueAfter)
+}
+
+func (suite *AccountInfoSubroutineTestSuite) TestFinalizeNoContext() {
+	// When
+	ctx := context.Background()
+	_, err := suite.testObj.Finalize(ctx, &v1alpha1.Account{
+		ObjectMeta: v1.ObjectMeta{
+			Name:       "example-account",
+			Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+		},
+	})
+
+	// Then
+	suite.Error(err.Err())
 }
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfoCallNotFound() *mocks.Client_Get_Call {

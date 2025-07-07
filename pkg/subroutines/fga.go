@@ -50,6 +50,13 @@ func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObj
 	log := logger.LoadLoggerFromContext(ctx)
 	log.Debug().Msg("Starting creator subroutine process() function")
 
+	var cn ClusteredName
+	var ok bool
+	if cn, ok = getClusteredName(ctx, ro); !ok {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
+
 	accountWorkspace, err := retrieveWorkspace(ctx, account, e.client, log)
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
@@ -57,13 +64,8 @@ func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObj
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		if cn, ok := getClusteredName(ctx, ro); ok {
-			next := e.limiter.When(cn)
-			return ctrl.Result{RequeueAfter: next}, nil
-		} else {
-			log.Error().Msg("cluster not found in context, cannot requeue")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-		}
+		next := e.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: next}, nil
 	}
 
 	// Prepare context to work in workspace
@@ -145,13 +147,8 @@ func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObj
 		}
 	}
 
-	if cn, ok := getClusteredName(ctx, ro); ok {
-		e.limiter.Forget(cn)
-		return ctrl.Result{}, nil
-	} else {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
+	e.limiter.Forget(cn)
+	return ctrl.Result{}, nil
 }
 
 func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {

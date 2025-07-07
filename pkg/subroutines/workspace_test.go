@@ -80,9 +80,9 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_NotExisting
 	// Given
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceCallNotFound(suite)
-
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 	// When
-	res, err := suite.testObj.Finalize(context.Background(), testAccount)
+	res, err := suite.testObj.Finalize(ctx, testAccount)
 
 	// Then
 	suite.False(res.Requeue)
@@ -95,8 +95,7 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingBut
 	// Given
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceByNameInDeletion(suite)
-	ctx := context.Background()
-	ctx = kontext.WithCluster(ctx, "some-cluster-id")
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 
 	// When
 	res, err := suite.testObj.Finalize(ctx, testAccount)
@@ -129,9 +128,9 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Deletion() {
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceByName(suite.clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "https://example.com/")
 	mockDeleteWorkspaceCallFailed(suite)
-
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 	// When
-	_, err := suite.testObj.Finalize(context.Background(), testAccount)
+	_, err := suite.testObj.Finalize(ctx, testAccount)
 
 	// Then
 	suite.Require().NotNil(err)
@@ -146,9 +145,9 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_On_Get() {
 	// Given
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceFailed(suite)
-
+	ctx := kontext.WithCluster(suite.context, "some-cluster-id")
 	// When
-	_, err := suite.testObj.Finalize(context.Background(), testAccount)
+	_, err := suite.testObj.Finalize(ctx, testAccount)
 
 	// Then
 	suite.Require().NotNil(err)

@@ -49,33 +49,37 @@ func (r *AccountInfoSubroutine) GetName() string {
 }
 
 func (r *AccountInfoSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
-	if len(ro.GetFinalizers()) > 1 {
-		if cn, ok := getClusteredName(ctx, ro); ok {
-			delay := r.limiter.When(cn)
-			return ctrl.Result{RequeueAfter: delay}, nil
-		} else {
-			log.Error().Msg("cluster not found in context, cannot requeue")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-		}
-	}
-
-	if cn, ok := getClusteredName(ctx, ro); ok {
-		r.limiter.Forget(cn)
-		return ctrl.Result{}, nil
-	} else {
+	var cn ClusteredName
+	var ok bool
+	if cn, ok = getClusteredName(ctx, ro); !ok {
 		log.Error().Msg("cluster not found in context, cannot requeue")
 		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
 	}
+
+	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
+	if len(ro.GetFinalizers()) > 1 {
+		delay := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: delay}, nil
+	}
+
+	r.limiter.Forget(cn)
+	return ctrl.Result{}, nil
 }
 
 func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.org/info"}
 }
 
-func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	instance := runtimeObj.(*v1alpha1.Account)
+func (r *AccountInfoSubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	instance := ro.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
+
+	var cn ClusteredName
+	var ok bool
+	if cn, ok = getClusteredName(ctx, ro); !ok {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
 
 	// select workspace for account
 	accountWorkspace, err := retrieveWorkspace(ctx, instance, r.client, log)
@@ -85,13 +89,8 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeo
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		if cn, ok := getClusteredName(ctx, instance); ok {
-			delay := r.limiter.When(cn)
-			return ctrl.Result{RequeueAfter: delay}, nil
-		} else {
-			log.Error().Msg("cluster not found in context, cannot requeue")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-		}
+		delay := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: delay}, nil
 	}
 
 	// Prepare context to work in workspace
@@ -130,13 +129,8 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeo
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 
-		if cn, ok := getClusteredName(ctx, instance); ok {
-			r.limiter.Forget(cn)
-			return ctrl.Result{}, nil
-		} else {
-			log.Error().Msg("cluster not found in context, cannot requeue")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-		}
+		r.limiter.Forget(cn)
+		return ctrl.Result{}, nil
 	}
 
 	parentAccountInfo, exists, err := r.retrieveAccountInfo(ctx, log)
@@ -160,6 +154,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj runtimeo
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
+	r.limiter.Forget(cn)
 	return ctrl.Result{}, nil
 }
 

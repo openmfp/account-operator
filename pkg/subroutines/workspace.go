@@ -42,6 +42,12 @@ func (r *WorkspaceSubroutine) GetName() string {
 
 func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := ro.(*corev1alpha1.Account)
+	var cn ClusteredName
+	var ok bool
+	if cn, ok = getClusteredName(ctx, ro); !ok {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
 
 	ws := kcptenancyv1alpha.Workspace{}
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, &ws)
@@ -53,13 +59,8 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.Run
 	}
 
 	if ws.GetDeletionTimestamp() != nil {
-		if cn, ok := getClusteredName(ctx, ro); ok {
-			next := r.limiter.When(cn)
-			return ctrl.Result{RequeueAfter: next}, nil
-		} else {
-			log.Error().Msg("cluster not found in context, cannot requeue")
-			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-		}
+		next := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: next}, nil
 	}
 
 	err = r.client.Delete(ctx, &ws)
@@ -68,13 +69,8 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.Run
 	}
 
 	// we need to requeue to check if the namespace was deleted
-	if cn, ok := getClusteredName(ctx, ro); ok {
-		next := r.limiter.When(cn)
-		return ctrl.Result{RequeueAfter: next}, nil
-	} else {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
+	next := r.limiter.When(cn)
+	return ctrl.Result{RequeueAfter: next}, nil
 }
 
 func (r *WorkspaceSubroutine) Finalizers() []string { // coverage-ignore
