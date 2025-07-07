@@ -20,6 +20,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	"github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -103,13 +104,14 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_OK_ForOrganization()
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseReady, "root:openmfp:orgs:root-org")
 	suite.mockGetAccountInfoCallNotFound()
 	suite.mockCreateAccountInfoCall(expectedAccountInfo)
-
+	ctx := context.Background()
+	ctx = kontext.WithCluster(ctx, "some-cluster-id")
 	// When
-	res, err := suite.testObj.Process(suite.context, testAccount)
+	res, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.Nil(err)
-	suite.False(res.Requeue)
+	suite.Assert().Zero(res.RequeueAfter)
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
@@ -123,15 +125,17 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Work
 			Type: v1alpha1.AccountTypeOrg,
 		},
 	}
+	ctx := context.Background()
+	ctx = kontext.WithCluster(ctx, "some-cluster-id")
 
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseInitializing, "root:openmfp:orgs")
 
 	// When
-	res, err := suite.testObj.Process(suite.context, testAccount)
+	res, err := suite.testObj.Process(ctx, testAccount)
 
 	// Then
 	suite.Nil(err)
-	suite.True(res.Requeue)
+	suite.Assert().NotZero(res.RequeueAfter)
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
@@ -376,7 +380,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestGetFinalizerName() {
 
 func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 	// When
-	res, err := suite.testObj.Finalize(context.Background(), &v1alpha1.Account{
+	ctx := context.Background()
+	ctx = kontext.WithCluster(ctx, "some-cluster-id")
+	res, err := suite.testObj.Finalize(ctx, &v1alpha1.Account{
 		ObjectMeta: v1.ObjectMeta{
 			Name:       "example-account",
 			Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
@@ -385,8 +391,7 @@ func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 
 	// Then
 	suite.Nil(err)
-	suite.True(res.Requeue)
-	suite.Equal(time.Duration(0), res.RequeueAfter)
+	suite.Assert().NotZero(res.RequeueAfter)
 }
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfoCallNotFound() *mocks.Client_Get_Call {

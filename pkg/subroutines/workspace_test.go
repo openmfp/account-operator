@@ -20,6 +20,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
 	corev1alpha1 "github.com/openmfp/account-operator/api/v1alpha1"
 	"github.com/openmfp/account-operator/internal/config"
@@ -94,13 +95,14 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingBut
 	// Given
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceByNameInDeletion(suite)
+	ctx := context.Background()
+	ctx = kontext.WithCluster(ctx, "some-cluster-id")
 
 	// When
-	res, err := suite.testObj.Finalize(context.Background(), testAccount)
+	res, err := suite.testObj.Finalize(ctx, testAccount)
 
 	// Then
-	suite.True(res.Requeue)
-	suite.Assert().Zero(res.RequeueAfter)
+	suite.Assert().NotZero(res.RequeueAfter)
 	suite.Nil(err)
 	suite.clientMock.AssertExpectations(suite.T())
 }
@@ -110,13 +112,14 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_Existing() 
 	testAccount := &corev1alpha1.Account{}
 	mockGetWorkspaceByName(suite.clientMock, kcpcorev1alpha1.LogicalClusterPhaseReady, "https://example.com/")
 	mockDeleteWorkspaceCall(suite)
+	ctx := context.Background()
+	ctx = kontext.WithCluster(ctx, "some-cluster-id")
 
 	// When
-	res, err := suite.testObj.Finalize(context.Background(), testAccount)
+	res, err := suite.testObj.Finalize(ctx, testAccount)
 
 	// Then
-	suite.True(res.Requeue)
-	suite.Assert().Zero(res.RequeueAfter)
+	suite.Assert().NotZero(res.RequeueAfter)
 	suite.Nil(err)
 	suite.clientMock.AssertExpectations(suite.T())
 }
