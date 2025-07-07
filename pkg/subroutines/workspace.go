@@ -2,13 +2,17 @@ package subroutines
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	commonconfig "github.com/platform-mesh/golang-commons/config"
 	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
 	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/rs/zerolog/log"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -23,19 +27,21 @@ const (
 )
 
 type WorkspaceSubroutine struct {
-	client client.Client
+	client  client.Client
+	limiter workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewWorkspaceSubroutine(client client.Client) *WorkspaceSubroutine {
-	return &WorkspaceSubroutine{client: client}
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
+	return &WorkspaceSubroutine{client: client, limiter: exp}
 }
 
 func (r *WorkspaceSubroutine) GetName() string {
 	return WorkspaceSubroutineName
 }
 
-func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	instance := runtimeObj.(*corev1alpha1.Account)
+func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	instance := ro.(*corev1alpha1.Account)
 
 	ws := kcptenancyv1alpha.Workspace{}
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, &ws)
@@ -47,7 +53,13 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj runtimeob
 	}
 
 	if ws.GetDeletionTimestamp() != nil {
-		return ctrl.Result{Requeue: true}, nil
+		if cn, ok := getClusteredName(ctx, ro); ok {
+			next := r.limiter.When(cn)
+			return ctrl.Result{RequeueAfter: next}, nil
+		} else {
+			log.Error().Msg("cluster not found in context, cannot requeue")
+			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+		}
 	}
 
 	err = r.client.Delete(ctx, &ws)
@@ -55,7 +67,14 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj runtimeob
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	return ctrl.Result{Requeue: true}, nil // we need to requeue to check if the namespace was deleted
+	// we need to requeue to check if the namespace was deleted
+	if cn, ok := getClusteredName(ctx, ro); ok {
+		next := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: next}, nil
+	} else {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
 }
 
 func (r *WorkspaceSubroutine) Finalizers() []string { // coverage-ignore

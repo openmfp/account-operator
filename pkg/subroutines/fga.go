@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
@@ -14,6 +15,7 @@ import (
 	"github.com/platform-mesh/golang-commons/fga/helpers"
 	"github.com/platform-mesh/golang-commons/logger"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
@@ -27,20 +29,23 @@ type FGASubroutine struct {
 	objectType      string
 	parentRelation  string
 	creatorRelation string
+	limiter         workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
 	return &FGASubroutine{
 		client:          cl,
 		fgaClient:       fgaClient,
 		creatorRelation: creatorRelation,
 		parentRelation:  parentRealtion,
 		objectType:      objectType,
+		limiter:         exp,
 	}
 }
 
-func (e *FGASubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	account := runtimeObj.(*v1alpha1.Account)
+func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	account := ro.(*v1alpha1.Account)
 
 	log := logger.LoadLoggerFromContext(ctx)
 	log.Debug().Msg("Starting creator subroutine process() function")
@@ -52,7 +57,13 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj runtimeobject.Ru
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		return ctrl.Result{Requeue: true}, nil
+		if cn, ok := getClusteredName(ctx, ro); ok {
+			next := e.limiter.When(cn)
+			return ctrl.Result{RequeueAfter: next}, nil
+		} else {
+			log.Error().Msg("cluster not found in context, cannot requeue")
+			return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+		}
 	}
 
 	// Prepare context to work in workspace
@@ -134,7 +145,13 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj runtimeobject.Ru
 		}
 	}
 
-	return ctrl.Result{}, nil
+	if cn, ok := getClusteredName(ctx, ro); ok {
+		e.limiter.Forget(cn)
+		return ctrl.Result{}, nil
+	} else {
+		log.Error().Msg("cluster not found in context, cannot requeue")
+		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
+	}
 }
 
 func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {

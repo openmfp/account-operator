@@ -33,11 +33,6 @@ const (
 	DefaultAccountInfoName    = "account"
 )
 
-type ClusteredName struct {
-	types.NamespacedName
-	ClusterID logicalcluster.Name
-}
-
 type AccountInfoSubroutine struct {
 	client   client.Client
 	serverCA string
