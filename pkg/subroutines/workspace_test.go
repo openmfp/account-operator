@@ -91,6 +91,20 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_NotExisting
 	suite.clientMock.AssertExpectations(suite.T())
 }
 
+func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_No_Cluster() {
+	// Given
+	testAccount := &corev1alpha1.Account{}
+
+	ctx := suite.context
+	// When
+	res, err := suite.testObj.Finalize(ctx, testAccount)
+
+	// Then
+	suite.Assert().Zero(res.RequeueAfter)
+	suite.Error(err.Err())
+	suite.clientMock.AssertExpectations(suite.T())
+}
+
 func (suite *WorkspaceSubroutineTestSuite) TestFinalize_OK_Workspace_ExistingButInDeletion() {
 	// Given
 	testAccount := &corev1alpha1.Account{}

@@ -56,10 +56,30 @@ func TestFGASubroutine_Process(t *testing.T) {
 		name          string
 		expectedError bool
 		account       *v1alpha1.Account
+		ctx           context.Context
 		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.Client)
 	}{
 		{
+			name:          "should_fail_if_no_cluster_in_context",
+			ctx:           context.Background(),
+			expectedError: true,
+			account: &v1alpha1.Account{
+				Spec: v1alpha1.AccountSpec{
+					Type: v1alpha1.AccountTypeOrg,
+				},
+				Status: v1alpha1.AccountStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   "FGASubroutine_Ready",
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "should_skip_processing_if_subroutine_ran_before",
+			ctx:  kontext.WithCluster(context.Background(), "some-cluster"),
 			account: &v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
 					Type: v1alpha1.AccountTypeOrg,
@@ -108,6 +128,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name:          "should_fail_if_get_store_id_fails",
+			ctx:           kontext.WithCluster(context.Background(), "some-cluster"),
 			expectedError: true,
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -146,6 +167,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name:          "should_fail_if_get_parent_account_fails",
+			ctx:           kontext.WithCluster(context.Background(), "some-cluster"),
 			expectedError: true,
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -160,6 +182,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name:          "should_fail_if_write_fails",
+			ctx:           kontext.WithCluster(context.Background(), "some-cluster"),
 			expectedError: true,
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -210,6 +233,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name: "should_ignore_error_if_duplicate_write_error",
+			ctx:  kontext.WithCluster(context.Background(), "some-cluster"),
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
@@ -261,6 +285,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name: "should_succeed",
+			ctx:  kontext.WithCluster(context.Background(), "some-cluster"),
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
@@ -311,6 +336,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name: "should_succeed_with_creator_for_sa",
+			ctx:  kontext.WithCluster(context.Background(), "some-cluster"),
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
@@ -370,6 +396,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name:          "should_fail_with_creator_in_sa_range",
+			ctx:           kontext.WithCluster(context.Background(), "some-cluster"),
 			expectedError: true,
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
@@ -420,6 +447,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		},
 		{
 			name: "should_succeed_with_creator",
+			ctx:  kontext.WithCluster(context.Background(), "some-cluster"),
 			account: &v1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-account",
@@ -485,8 +513,8 @@ func TestFGASubroutine_Process(t *testing.T) {
 			}
 
 			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, "owner", "parent", "account")
-			ctx := kontext.WithCluster(context.Background(), "abcdefghi")
-			_, err := routine.Process(ctx, test.account)
+
+			_, err := routine.Process(test.ctx, test.account)
 			if test.expectedError {
 				assert.NotNil(t, err)
 			} else {
