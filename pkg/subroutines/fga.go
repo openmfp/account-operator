@@ -46,16 +46,10 @@ func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient
 
 func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := ro.(*v1alpha1.Account)
+	cn := MustGetClusteredName(ctx, ro)
 
 	log := logger.LoadLoggerFromContext(ctx)
 	log.Debug().Msg("Starting creator subroutine process() function")
-
-	var cn ClusteredName
-	var ok bool
-	if cn, ok = getClusteredName(ctx, ro); !ok {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
 
 	accountWorkspace, err := retrieveWorkspace(ctx, account, e.client, log)
 	if err != nil {

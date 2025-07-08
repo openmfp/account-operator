@@ -10,6 +10,7 @@ import (
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/platform-mesh/golang-commons/context"
 	"github.com/platform-mesh/golang-commons/logger"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
@@ -160,10 +161,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Miss
 	suite.mockCreateAccountInfoCall(expectedAccountInfo)
 
 	// When
-	_, err := suite.testObj.Process(context.Background(), testAccount)
-
-	// Then
-	suite.Error(err.Err())
+	assert.Panics(suite.T(), func() {
+		suite.testObj.Process(context.Background(), testAccount)
+	})
 }
 
 func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Workspace_Not_Ready() {
@@ -205,10 +205,9 @@ func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_Work
 	suite.mockGetWorkspaceByName(kcpcorev1alpha1.LogicalClusterPhaseInitializing, "root:openmfp:orgs")
 
 	// When
-	_, err := suite.testObj.Process(ctx, testAccount)
-
-	// Then
-	suite.Error(err.Err())
+	assert.Panics(suite.T(), func() {
+		suite.testObj.Process(ctx, testAccount)
+	})
 }
 
 func (suite *AccountInfoSubroutineTestSuite) TestProcessing_ForOrganization_No_Workspace() {
@@ -476,15 +475,14 @@ func (suite *AccountInfoSubroutineTestSuite) TestFinalize() {
 func (suite *AccountInfoSubroutineTestSuite) TestFinalizeNoContext() {
 	// When
 	ctx := context.Background()
-	_, err := suite.testObj.Finalize(ctx, &v1alpha1.Account{
-		ObjectMeta: v1.ObjectMeta{
-			Name:       "example-account",
-			Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
-		},
+	assert.Panics(suite.T(), func() {
+		suite.testObj.Finalize(ctx, &v1alpha1.Account{
+			ObjectMeta: v1.ObjectMeta{
+				Name:       "example-account",
+				Finalizers: []string{"account.core.openmfp.org/info", "account.core.openmfp.org/abc"},
+			},
+		})
 	})
-
-	// Then
-	suite.Error(err.Err())
 }
 
 func (suite *AccountInfoSubroutineTestSuite) mockGetAccountInfoCallNotFound() *mocks.Client_Get_Call {

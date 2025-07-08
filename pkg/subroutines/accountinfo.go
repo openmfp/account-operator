@@ -13,10 +13,8 @@ import (
 	"github.com/platform-mesh/golang-commons/controller/lifecycle/subroutine"
 	"github.com/platform-mesh/golang-commons/errors"
 	"github.com/platform-mesh/golang-commons/logger"
-	"github.com/rs/zerolog/log"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,12 +47,7 @@ func (r *AccountInfoSubroutine) GetName() string {
 }
 
 func (r *AccountInfoSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	var cn ClusteredName
-	var ok bool
-	if cn, ok = getClusteredName(ctx, ro); !ok {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
+	cn := MustGetClusteredName(ctx, ro)
 
 	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
 	if len(ro.GetFinalizers()) > 1 {
@@ -73,13 +66,7 @@ func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
 func (r *AccountInfoSubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := ro.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
-
-	var cn ClusteredName
-	var ok bool
-	if cn, ok = getClusteredName(ctx, ro); !ok {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
+	cn := MustGetClusteredName(ctx, ro)
 
 	// select workspace for account
 	accountWorkspace, err := retrieveWorkspace(ctx, instance, r.client, log)
@@ -188,14 +175,4 @@ func (r *AccountInfoSubroutine) retrieveCurrentWorkspacePath(ws *kcptenancyv1alp
 		return "", "", fmt.Errorf("workspace URL is empty")
 	}
 	return lastSegment, ws.Spec.URL, nil
-}
-
-func getClusteredName(ctx context.Context, instance runtimeobject.RuntimeObject) (ClusteredName, bool) {
-	var cn ClusteredName
-	if cluster, ok := kontext.ClusterFrom(ctx); ok {
-		cn = ClusteredName{NamespacedName: types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()}, ClusterID: cluster}
-		return cn, true
-	} else {
-		return cn, false
-	}
 }

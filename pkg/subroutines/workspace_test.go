@@ -10,6 +10,7 @@ import (
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	openmfpcontext "github.com/platform-mesh/golang-commons/context"
 	"github.com/platform-mesh/golang-commons/logger"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
@@ -97,11 +98,10 @@ func (suite *WorkspaceSubroutineTestSuite) TestFinalize_Error_No_Cluster() {
 
 	ctx := suite.context
 	// When
-	res, err := suite.testObj.Finalize(ctx, testAccount)
+	assert.Panics(suite.T(), func() {
+		suite.testObj.Finalize(ctx, testAccount)
+	})
 
-	// Then
-	suite.Assert().Zero(res.RequeueAfter)
-	suite.Error(err.Err())
 	suite.clientMock.AssertExpectations(suite.T())
 }
 

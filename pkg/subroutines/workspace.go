@@ -2,14 +2,12 @@ package subroutines
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	commonconfig "github.com/platform-mesh/golang-commons/config"
 	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
 	"github.com/platform-mesh/golang-commons/errors"
-	"github.com/rs/zerolog/log"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -42,12 +40,7 @@ func (r *WorkspaceSubroutine) GetName() string {
 
 func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := ro.(*corev1alpha1.Account)
-	var cn ClusteredName
-	var ok bool
-	if cn, ok = getClusteredName(ctx, ro); !ok {
-		log.Error().Msg("cluster not found in context, cannot requeue")
-		return ctrl.Result{}, errors.NewOperatorError(fmt.Errorf("cluster not found in context, cannot requeue"), true, false)
-	}
+	cn := MustGetClusteredName(ctx, ro)
 
 	ws := kcptenancyv1alpha.Workspace{}
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, &ws)

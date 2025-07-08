@@ -55,6 +55,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 	testCases := []struct {
 		name          string
 		expectedError bool
+		expectedPanic bool
 		account       *v1alpha1.Account
 		ctx           context.Context
 		setupMocks    func(*mocks.OpenFGAServiceClient, *mocks.Client)
@@ -62,7 +63,7 @@ func TestFGASubroutine_Process(t *testing.T) {
 		{
 			name:          "should_fail_if_no_cluster_in_context",
 			ctx:           context.Background(),
-			expectedError: true,
+			expectedPanic: true,
 			account: &v1alpha1.Account{
 				Spec: v1alpha1.AccountSpec{
 					Type: v1alpha1.AccountTypeOrg,
@@ -514,13 +515,20 @@ func TestFGASubroutine_Process(t *testing.T) {
 
 			routine := subroutines.NewFGASubroutine(clientMock, openFGAClient, "owner", "parent", "account")
 
-			_, err := routine.Process(test.ctx, test.account)
-			if test.expectedError {
-				assert.NotNil(t, err)
+			if test.expectedPanic {
+				assert.Panics(t, func() {
+					_, _ = routine.Process(test.ctx, test.account)
+				})
+				clientMock.AssertExpectations(t)
 			} else {
-				assert.Nil(t, err)
+				_, err := routine.Process(test.ctx, test.account)
+				if test.expectedError {
+					assert.NotNil(t, err)
+				} else {
+					assert.Nil(t, err)
+				}
+				clientMock.AssertExpectations(t)
 			}
-			clientMock.AssertExpectations(t)
 
 		})
 	}
