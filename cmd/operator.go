@@ -23,8 +23,8 @@ import (
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha1"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	openmfpcontext "github.com/openmfp/golang-commons/context"
-	"github.com/openmfp/golang-commons/traces"
+	openmfpcontext "github.com/platform-mesh/golang-commons/context"
+	"github.com/platform-mesh/golang-commons/traces"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"

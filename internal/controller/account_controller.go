@@ -20,9 +20,10 @@ import (
 	"context"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	openmfpconfig "github.com/openmfp/golang-commons/config"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/logger"
+	openmfpconfig "github.com/platform-mesh/golang-commons/config"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/controllerruntime"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/subroutine"
+	"github.com/platform-mesh/golang-commons/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -39,11 +40,11 @@ var (
 
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
-	lifecycle *lifecycle.LifecycleManager
+	lifecycle *controllerruntime.LifecycleManager
 }
 
 func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.OperatorConfig, fgaClient openfgav1.OpenFGAServiceClient) *AccountReconciler {
-	var subs []lifecycle.Subroutine
+	var subs []subroutine.Subroutine
 	if cfg.Subroutines.Workspace.Enabled {
 		subs = append(subs, subroutines.NewWorkspaceSubroutine(mgr.GetClient()))
 	}
@@ -54,7 +55,7 @@ func NewAccountReconciler(log *logger.Logger, mgr ctrl.Manager, cfg config.Opera
 		subs = append(subs, subroutines.NewFGASubroutine(mgr.GetClient(), fgaClient, cfg.Subroutines.FGA.CreatorRelation, cfg.Subroutines.FGA.ParentRelation, cfg.Subroutines.FGA.ObjectType))
 	}
 	return &AccountReconciler{
-		lifecycle: lifecycle.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithConditionManagement(),
+		lifecycle: controllerruntime.NewLifecycleManager(log, operatorName, accountReconcilerName, mgr.GetClient(), subs).WithConditionManagement(),
 	}
 }
 

@@ -2,13 +2,15 @@ package subroutines
 
 import (
 	"context"
+	"time"
 
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
-	commonconfig "github.com/openmfp/golang-commons/config"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
+	commonconfig "github.com/platform-mesh/golang-commons/config"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -23,19 +25,22 @@ const (
 )
 
 type WorkspaceSubroutine struct {
-	client client.Client
+	client  client.Client
+	limiter workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewWorkspaceSubroutine(client client.Client) *WorkspaceSubroutine {
-	return &WorkspaceSubroutine{client: client}
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
+	return &WorkspaceSubroutine{client: client, limiter: exp}
 }
 
 func (r *WorkspaceSubroutine) GetName() string {
 	return WorkspaceSubroutineName
 }
 
-func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	instance := runtimeObj.(*corev1alpha1.Account)
+func (r *WorkspaceSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	instance := ro.(*corev1alpha1.Account)
+	cn := MustGetClusteredName(ctx, ro)
 
 	ws := kcptenancyv1alpha.Workspace{}
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Name}, &ws)
@@ -47,7 +52,8 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle
 	}
 
 	if ws.GetDeletionTimestamp() != nil {
-		return ctrl.Result{Requeue: true}, nil
+		next := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: next}, nil
 	}
 
 	err = r.client.Delete(ctx, &ws)
@@ -55,14 +61,16 @@ func (r *WorkspaceSubroutine) Finalize(ctx context.Context, runtimeObj lifecycle
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
 
-	return ctrl.Result{Requeue: true}, nil // we need to requeue to check if the namespace was deleted
+	// we need to requeue to check if the namespace was deleted
+	next := r.limiter.When(cn)
+	return ctrl.Result{RequeueAfter: next}, nil
 }
 
 func (r *WorkspaceSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.org/finalizer"}
 }
 
-func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *WorkspaceSubroutine) Process(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	instance := runtimeObj.(*corev1alpha1.Account)
 	cfg := commonconfig.LoadConfigFromContext(ctx).(config.OperatorConfig)
 

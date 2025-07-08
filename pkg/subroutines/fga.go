@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
-	"github.com/openmfp/golang-commons/fga/helpers"
-	"github.com/openmfp/golang-commons/logger"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/platform-mesh/golang-commons/fga/helpers"
+	"github.com/platform-mesh/golang-commons/logger"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
@@ -27,20 +29,24 @@ type FGASubroutine struct {
 	objectType      string
 	parentRelation  string
 	creatorRelation string
+	limiter         workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewFGASubroutine(cl client.Client, fgaClient openfgav1.OpenFGAServiceClient, creatorRelation, parentRealtion, objectType string) *FGASubroutine {
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
 	return &FGASubroutine{
 		client:          cl,
 		fgaClient:       fgaClient,
 		creatorRelation: creatorRelation,
 		parentRelation:  parentRealtion,
 		objectType:      objectType,
+		limiter:         exp,
 	}
 }
 
-func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	account := runtimeObj.(*v1alpha1.Account)
+func (e *FGASubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	account := ro.(*v1alpha1.Account)
+	cn := MustGetClusteredName(ctx, ro)
 
 	log := logger.LoadLoggerFromContext(ctx)
 	log.Debug().Msg("Starting creator subroutine process() function")
@@ -52,7 +58,8 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		return ctrl.Result{Requeue: true}, nil
+		next := e.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: next}, nil
 	}
 
 	// Prepare context to work in workspace
@@ -134,10 +141,11 @@ func (e *FGASubroutine) Process(ctx context.Context, runtimeObj lifecycle.Runtim
 		}
 	}
 
+	e.limiter.Forget(cn)
 	return ctrl.Result{}, nil
 }
 
-func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (e *FGASubroutine) Finalize(ctx context.Context, runtimeObj runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
 	account := runtimeObj.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
 

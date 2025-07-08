@@ -14,8 +14,8 @@ require (
 	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20250528161632-e53c69cc5531
-	github.com/openmfp/golang-commons v0.150.11
 	github.com/otiai10/copy v1.14.1
+	github.com/platform-mesh/golang-commons v0.0.21
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -26,7 +26,7 @@ require (
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.33.2
-	k8s.io/apiextensions-apiserver v0.32.3
+	k8s.io/apiextensions-apiserver v0.33.0
 	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.2
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397

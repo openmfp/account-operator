@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	kcpcorev1alpha "github.com/kcp-dev/kcp/sdk/apis/core/v1alpha1"
 	kcptenancyv1alpha "github.com/kcp-dev/kcp/sdk/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v3"
-	"github.com/openmfp/golang-commons/controller/lifecycle"
-	"github.com/openmfp/golang-commons/errors"
-	"github.com/openmfp/golang-commons/logger"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/runtimeobject"
+	"github.com/platform-mesh/golang-commons/controller/lifecycle/subroutine"
+	"github.com/platform-mesh/golang-commons/errors"
+	"github.com/platform-mesh/golang-commons/logger"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -21,7 +24,7 @@ import (
 	"github.com/openmfp/account-operator/api/v1alpha1"
 )
 
-var _ lifecycle.Subroutine = (*AccountInfoSubroutine)(nil)
+var _ subroutine.Subroutine = (*AccountInfoSubroutine)(nil)
 
 const (
 	AccountInfoSubroutineName = "AccountInfoSubroutine"
@@ -31,21 +34,28 @@ const (
 type AccountInfoSubroutine struct {
 	client   client.Client
 	serverCA string
+	limiter  workqueue.TypedRateLimiter[ClusteredName]
 }
 
 func NewAccountInfoSubroutine(client client.Client, serverCA string) *AccountInfoSubroutine {
-	return &AccountInfoSubroutine{client: client, serverCA: serverCA}
+	exp := workqueue.NewTypedItemExponentialFailureRateLimiter[ClusteredName](1*time.Second, 120*time.Second)
+	return &AccountInfoSubroutine{client: client, serverCA: serverCA, limiter: exp}
 }
 
 func (r *AccountInfoSubroutine) GetName() string {
 	return AccountInfoSubroutineName
 }
 
-func (r *AccountInfoSubroutine) Finalize(_ context.Context, ro lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+func (r *AccountInfoSubroutine) Finalize(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	cn := MustGetClusteredName(ctx, ro)
+
 	// The account info object is relevant input for other finalizers, removing the accountinfo finalizer at last
 	if len(ro.GetFinalizers()) > 1 {
-		return ctrl.Result{Requeue: true}, nil
+		delay := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: delay}, nil
 	}
+
+	r.limiter.Forget(cn)
 	return ctrl.Result{}, nil
 }
 
@@ -53,9 +63,10 @@ func (r *AccountInfoSubroutine) Finalizers() []string { // coverage-ignore
 	return []string{"account.core.openmfp.org/info"}
 }
 
-func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycle.RuntimeObject) (ctrl.Result, errors.OperatorError) {
-	instance := runtimeObj.(*v1alpha1.Account)
+func (r *AccountInfoSubroutine) Process(ctx context.Context, ro runtimeobject.RuntimeObject) (ctrl.Result, errors.OperatorError) {
+	instance := ro.(*v1alpha1.Account)
 	log := logger.LoadLoggerFromContext(ctx)
+	cn := MustGetClusteredName(ctx, ro)
 
 	// select workspace for account
 	accountWorkspace, err := retrieveWorkspace(ctx, instance, r.client, log)
@@ -65,7 +76,8 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 
 	if accountWorkspace.Status.Phase != kcpcorev1alpha.LogicalClusterPhaseReady {
 		log.Info().Msg("workspace is not ready yet, retry")
-		return ctrl.Result{Requeue: true}, nil
+		delay := r.limiter.When(cn)
+		return ctrl.Result{RequeueAfter: delay}, nil
 	}
 
 	// Prepare context to work in workspace
@@ -104,6 +116,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 			return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 		}
 
+		r.limiter.Forget(cn)
 		return ctrl.Result{}, nil
 	}
 
@@ -128,6 +141,7 @@ func (r *AccountInfoSubroutine) Process(ctx context.Context, runtimeObj lifecycl
 	if err != nil {
 		return ctrl.Result{}, errors.NewOperatorError(err, true, true)
 	}
+	r.limiter.Forget(cn)
 	return ctrl.Result{}, nil
 }
 
