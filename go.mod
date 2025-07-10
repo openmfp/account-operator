@@ -15,7 +15,7 @@ require (
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5
 	github.com/openfga/api/proto v0.0.0-20250528161632-e53c69cc5531
 	github.com/otiai10/copy v1.14.1
-	github.com/platform-mesh/golang-commons v0.0.21
+	github.com/platform-mesh/golang-commons v0.1.2
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
