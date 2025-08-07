@@ -5,9 +5,9 @@ go 1.24.3
 replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime v0.19.0-kcp.1
 
 replace (
-	k8s.io/api => k8s.io/api v0.32.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.32.4
-	k8s.io/client-go => k8s.io/client-go v0.32.4
+	k8s.io/api => k8s.io/api v0.33.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.33.3
+	k8s.io/client-go => k8s.io/client-go v0.33.3
 )
 
 require (
@@ -25,10 +25,10 @@ require (
 	golang.org/x/sys v0.35.0
 	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.33.2
-	k8s.io/apiextensions-apiserver v0.33.0
-	k8s.io/apimachinery v0.33.2
-	k8s.io/client-go v0.33.2
+	k8s.io/api v0.33.3
+	k8s.io/apiextensions-apiserver v0.33.3
+	k8s.io/apimachinery v0.33.3
+	k8s.io/client-go v0.33.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.21.0
 )
@@ -55,10 +55,8 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
