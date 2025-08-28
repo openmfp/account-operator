@@ -1,5 +1,5 @@
 > [!WARNING]
-> This Repository is under development and not ready for productive use. It is in an alpha stage. That means APIs and concepts may change on short notice including breaking changes or complete removal of apis.
+> This repository has been moved to https://github.com/platform-mesh/account-operator
 
 # OpenMFP - account-operator
 ![Build Status](https://github.com/openmfp/account-operator/actions/workflows/pipeline.yml/badge.svg)
